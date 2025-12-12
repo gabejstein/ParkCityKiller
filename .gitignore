@@ -1,0 +1,28 @@
+#Ignore folders inside the project directory
+
+working_files/
+x64/
+assets/
+
+#Ignore common Visual Studio and build artifacts
+
+x64/
+.vs/
+
+# User-specific files
+
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Others
+
+*.log
+*.tlog/
+*.ipch/
+*.VC.db
+*.exe
+*.dll
+*.lib
+*.pch
