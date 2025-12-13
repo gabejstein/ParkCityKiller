@@ -9,8 +9,10 @@ static char msgQueue[MAX_QUEUE][MAX_MSG];
 
 static int head,tail;
 static float timer = 0.0f, msgDuration = 1.5f;
+static int bHide = 0;
 
 static int x = 10, y = 10, width = VIRTUAL_WINDOW_W-20, height = 20;
+
 
 void ResetMsgBox(void)
 {
@@ -45,6 +47,7 @@ void PushMsgBox(const char* msg)
 void DrawMsgBox(void)
 {
 	if (!head)return;
+	if (bHide)return;
 
 	//panel box
 	Color bg = { 100,100,100,255 };

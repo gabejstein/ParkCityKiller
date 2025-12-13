@@ -8,9 +8,6 @@ static void TitleState_Render(void);
 
 void TitleState_Start(void)
 {
-
-	gGame.update = TitleState_Update;
-	gGame.render = TitleState_Render;
 	
 }
 

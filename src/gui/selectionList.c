@@ -64,7 +64,7 @@ static int IsGamepadStickRight(int gamepad)
 
 SelectionList* NewSelectionList(int nOptions, void(*onSelect), void(*renderItem))
 {
-	SelectionList* list = (SelectionList*)malloc(sizeof(SelectionList));
+	SelectionList* list = (SelectionList*) malloc(sizeof(SelectionList));
 	if (!list)
 	{
 		printf("Could not allocate memory for selection list.\n");
@@ -215,6 +215,8 @@ void RenderSelectionList(SelectionList* list)
 
 void UnloadSelectionList(SelectionList* list)
 {
+	if (!list)return;
+
 	free(list);
 	list = NULL;
 }

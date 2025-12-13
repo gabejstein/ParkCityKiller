@@ -17,9 +17,10 @@ static Shader shader = { 0 };
 void InitParticleSystem(Camera* camera)
 {
 	gCamera = camera;
+	nParticles = 0;
 	memset(particlePool, 0, sizeof(particlePool));
 	shader = LoadShader("assets/shaders/particle.vs", "assets/shaders/particle.fs");
-	nParticles = 0;
+	
 }
 
 void UnloadParticleSystem(void)

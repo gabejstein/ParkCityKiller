@@ -1,19 +1,29 @@
 #include "pauseMenuState.h"
 #include "common.h"
 #include "gui/selectionList.h"
-#include "playState.h"
 
+static void PauseMenuState_Start(void);
 static void PauseMenuState_Update(float dt);
 static void PauseMenuState_Render(void);
 static void PauseMenuState_Unload(void);
 
-SelectionList* listTest = NULL;
+static SelectionList* listTest = NULL;
+
+GameState GetPauseMenuState(void)
+{
+	GameState state = { 0 };
+
+	state.start = PauseMenuState_Start;
+	state.update = PauseMenuState_Update;
+	state.render = PauseMenuState_Render;
+	state.unload = PauseMenuState_Unload;
+
+	return state;
+}
 
 void PauseMenuState_Start(void)
 {
-	gGame.update = PauseMenuState_Update;
-	gGame.render = PauseMenuState_Render;
-	gGame.unload = PauseMenuState_Unload;
+	printf("Starting pause state.\n");
 
 	char* options[] = {
 		"Birdy",
@@ -36,15 +46,14 @@ static void PauseMenuState_Update(float dt)
 
 	if (IsGamepadButtonPressed(0, GAMEPAD_BUTTON_MIDDLE_RIGHT))
 	{
-		gGame.unload();
-		PlayState_Start();
+		PopGameState();
 	}
 		
 }
 
 static void PauseMenuState_Render(void)
 {
-	Color color = (Color){100,100,100,255};
+	Color color = (Color){10,10,10,200};
 	DrawRectangle(10, 10, VIRTUAL_WINDOW_W-20, VIRTUAL_WINDOW_H-20, color);
 
 	RenderSelectionList(listTest);
@@ -52,5 +61,6 @@ static void PauseMenuState_Render(void)
 
 static void PauseMenuState_Unload(void)
 {
+	printf("Unloading pause menu.\n");
 	UnloadSelectionList(listTest);
 }

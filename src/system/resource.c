@@ -1,6 +1,7 @@
 #include "resource.h"
 #include <string.h>
 #include <stdlib.h>
+#include <rlgl.h>
 
 #ifndef MAX_FILENAME
 	#define MAX_FILENAME 256

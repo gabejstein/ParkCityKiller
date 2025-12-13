@@ -16,7 +16,7 @@ typedef struct
 	int bShowCursor;
 	void (*OnSelect)(int);
 	void (*RenderItem)(char* label);
-	char* options[7];
+	char* options[11];
 }SelectionList;
 
 SelectionList* NewSelectionList(int nOptions, void(*onSelect), void(*renderItem));

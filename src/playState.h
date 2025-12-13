@@ -3,7 +3,7 @@
 
 #include "entity.h"
 
-void PlayState_Start(void);
+GameState GetPlayState(void);
 Entity* NewEntity(void);
 
 Entity* GetPlayer(void);

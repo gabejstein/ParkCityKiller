@@ -15,7 +15,7 @@ static void UpdateAttack(Entity* e, Enemy* enemy, float dt);
 static void UpdatePursue(Entity* e, Enemy* enemy, float dt);
 static void UpdateEscape(Entity* e, Enemy* enemy, float dt);
 static void UpdateHurt(Entity* e, Enemy* enemy, float dt);
-static void FaceObject(Entity* e, float dt);
+static void FaceObject(Entity* e,Vector3 target, float dt);
 
 static float triggerDistance = 50.0f;
 static float attackDistance = 30.0f;

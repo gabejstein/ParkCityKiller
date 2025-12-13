@@ -23,6 +23,20 @@ typedef enum
 
 typedef struct
 {
+    GAME_STATE stateId;
+    void (*start)(void);
+    void (*update)(float);
+    void (*render)(void);
+    void (*unload)(void);
+}GameState;
+
+#define MAX_STATE_STACK 10
+void PushGameState(GameState state);
+void PopGameState(void);
+void ChangeGameState(GameState newState);
+
+typedef struct
+{
     Vector3 position;
     Vector3 rotation;
     Vector3 forward;
@@ -48,10 +62,8 @@ typedef struct
 
 typedef struct
 {
-    GAME_STATE state;
-    void (*update)(float);
-    void (*render)(void);
-    void (*unload)(void);
+    GameState stateStack[MAX_STATE_STACK];
+    int stateStackTop;
     int score;
     int lives;
     Fader fader;

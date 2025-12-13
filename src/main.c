@@ -35,16 +35,17 @@ int main(int argc, char** argv)
         gGame.virtualMouse = Vector2Clamp(gGame.virtualMouse,(Vector2) { 0, 0 },(Vector2) {VIRTUAL_WINDOW_W, VIRTUAL_WINDOW_H });
 
         //Update Logic Here
-
-        if (gGame.update)
-            gGame.update(deltaTime);
+     
+        if (gGame.stateStack[gGame.stateStackTop-1].update)
+            gGame.stateStack[gGame.stateStackTop-1].update(deltaTime);
 
         //Rendering Logic Here
         BeginTextureMode(target);
             ClearBackground(RAYWHITE);
 
-            if (gGame.render)
-                gGame.render();
+            for(int i=0;i<gGame.stateStackTop;i++)
+                if (gGame.stateStack[i].render)
+                    gGame.stateStack[i].render();
 
             if (gGame.fader.alpha > 0)
                 DrawRectangle(0, 0, VIRTUAL_WINDOW_W, VIRTUAL_WINDOW_H, Fade(gGame.fader.color, gGame.fader.alpha));
@@ -96,14 +97,52 @@ static void InitRayLib(void)
 
 static void InitGame(void)
 {
-    PlayState_Start();
+    //PlayState_Start();
+    memset(gGame.stateStack, 0, sizeof(gGame.stateStack));
+    gGame.stateStackTop = 0;
+    PushGameState(GetPlayState());
 }
 
 static void Unload(void)
 {
-    if (gGame.unload)
-        gGame.unload();
+    if (gGame.stateStack[gGame.stateStackTop - 1].unload)
+        gGame.stateStack[gGame.stateStackTop - 1].unload();
 
     RES_Unload();
     UnloadRenderTexture(target);
+}
+
+void PushGameState(GameState state)
+{
+    if (gGame.stateStackTop >= MAX_STATE_STACK) return;
+
+    gGame.stateStack[gGame.stateStackTop] = state;
+    if(gGame.stateStack[gGame.stateStackTop].start)
+        gGame.stateStack[gGame.stateStackTop].start();
+
+    gGame.stateStackTop++;
+}
+
+void PopGameState(void)
+{
+    if (gGame.stateStackTop <= 0) return;
+
+    if(gGame.stateStack[gGame.stateStackTop - 1].unload)
+        gGame.stateStack[gGame.stateStackTop-1].unload();
+
+    gGame.stateStackTop--;
+}
+
+void ChangeGameState(GameState newState)
+{
+    if (gGame.stateStack[gGame.stateStackTop - 1].unload)
+        gGame.stateStack[gGame.stateStackTop - 1].unload();
+
+    gGame.stateStackTop = 0;
+
+    gGame.stateStack[gGame.stateStackTop] = newState;
+    if (gGame.stateStack[gGame.stateStackTop].start)
+        gGame.stateStack[gGame.stateStackTop].start();
+
+    gGame.stateStackTop++;
 }

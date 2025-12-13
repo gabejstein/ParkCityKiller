@@ -14,6 +14,7 @@
 
 static const Color bgColor = { 0,0,0,255 };
 
+static void PlayState_Start(void);
 static void PlayState_Update(float dt);
 static void PlayState_Render(void);
 static void UpdatePlayerCamera(float dt);
@@ -37,16 +38,8 @@ static ModelHandle levelCollider;
 
 static Camera camera = { 0 };
 
-//skybox
-static Shader skyShader = { 0 };
-Mesh skyBoxMesh;
-Model skyBox = { 0 };
-unsigned int moveLoc;
-static float skyRot = 0.0f;
-
 TextureHandle background; //TODO: make this dependent on the level.
 static TextureHandle crossHair;
-
 
 static void InitPlayerStats(void)
 {
@@ -88,13 +81,25 @@ static void ChangeLevel(LEVEL_DEF_ID id, Vector3 pos)
 	}
 }
 
-void PlayState_Start(void)
+GameState GetPlayState(void)
 {
-	gGame.update = PlayState_Update;
-	gGame.render = PlayState_Render;
-	gGame.unload = PlayState_Unload;
+	GameState state = {0};
+
+	state.start = PlayState_Start;
+	state.update = PlayState_Update;
+	state.render = PlayState_Render;
+	state.unload = PlayState_Unload;
+
+	return state;
+}
+
+static void PlayState_Start(void)
+{
 	gGame.bDebugMode = 0;
 	curEntity = 0;
+	memset(entities, 0, sizeof(entities));
+
+	InitPlayerStats();
 
 	player = NewEntity();
 	NewPlayer(player, (Vector3) {4.0f,3.0f,4.0f});
@@ -102,20 +107,11 @@ void PlayState_Start(void)
 	InitBulletPool();
 	InitEnemyPool();
 	InitPickupPool();
-	InitPlayerStats();
 	InitSpawnZones();
 
 	Enemy_SetPlayer(player);
 
-	/*for (int i = 0; i < 30; i++)
-	{
-		Vector3 pos;
-		pos.x = GetRandomValue(-130, 260);
-		pos.y = 0;
-		pos.z = GetRandomValue(-176, 158);
-		SpawnEnemy(pos);
-	}*/
-	
+	//just for testing purposes. delete later.
 	SpawnEnemy((Vector3) { 40, 0, -10 });
 
 	for (int i = 0; i < 15; i++)
@@ -142,20 +138,6 @@ void PlayState_Start(void)
 	gGame.mainCamera.camera = &camera;
 	gGame.mainCamera.transform.rotation = (Vector3){ 0.0,0.0,0.0 };
 
-	skyShader = LoadShader("assets/shaders/skybox.vs", "assets/shaders/skybox.fs");
-	moveLoc = GetShaderLocation(skyShader, "movement");
-
-	skyBoxMesh = GenMeshCube(1.0f, 1.0f, 1.0f);
-	skyBox = LoadModelFromMesh(skyBoxMesh);
-
-	skyBox.materials[0].shader = skyShader;
-	SetShaderValue(skyBox.materials[0].shader, GetShaderLocation(skyBox.materials[0].shader, "environmentMap"), (int[1]) { MATERIAL_MAP_CUBEMAP }, SHADER_UNIFORM_INT);
-
-	Image img = LoadImage("assets/textures/skybox_02.png");
-	skyBox.materials[0].maps[MATERIAL_MAP_CUBEMAP].texture = LoadTextureCubemap(img, CUBEMAP_LAYOUT_LINE_HORIZONTAL);
-	SetTextureFilter(skyBox.materials[0].maps[MATERIAL_MAP_CUBEMAP].texture, TEXTURE_FILTER_POINT);
-	UnloadImage(img);
-
 	background = RES_LoadTexture("assets/textures/skybox_03.png");
 	crossHair = RES_LoadTexture("assets/textures/Crosshair_01.png");
 
@@ -167,6 +149,8 @@ void PlayState_Start(void)
 
 static void PlayState_Unload(void)
 {
+	printf("Unloading play state.\n");
+
 	for (int i = 0; i < curEntity; i++)
 	{
 		Entity* e = &entities[i];
@@ -179,21 +163,11 @@ static void PlayState_Unload(void)
 	UnloadParticleSystem();
 }
 
-void DrawSkyBox(void)
-{
-	//SetShaderValue(skyShader, moveLoc, (float[3]) { 0.0, skyRot, 0.0 }, SHADER_UNIFORM_VEC3);
 
-	rlDisableBackfaceCulling();
-	rlDisableDepthMask();
-	DrawModelEx(skyBox, Vector3Zero(), (Vector3) {0,1.0f,0}, skyRot,Vector3One(), WHITE);
-	rlEnableBackfaceCulling();
-	rlEnableDepthMask();
-}
 
 static void PlayState_Update(float dt)
 {
-	skyRot += 2.0f * dt;
-
+	
 	UpdateCamera(&camera, CAMERA_PERSPECTIVE);
 	Vector3 cameraDir = Vector3Subtract(camera.position, camera.target);
 	RES_UpdateShader(&camera.position, &cameraDir);
@@ -222,8 +196,8 @@ static void PlayState_Update(float dt)
 
 	if (IsGamepadButtonPressed(0, GAMEPAD_BUTTON_MIDDLE_RIGHT))
 	{
-		gGame.unload();
-		PauseMenuState_Start();
+		
+		PushGameState(GetPauseMenuState());
 	}
 		
 }
@@ -235,8 +209,6 @@ static void PlayState_Render(void)
 	RES_DrawTexture(background, 0, 0);
 
 	BeginMode3D(camera);
-
-	//DrawSkyBox();
 
 	RES_DrawModel(levelModel, Vector3Zero(), 1);
 	RenderEntities();
@@ -253,6 +225,7 @@ static void PlayState_Render(void)
 		DrawLine3D(origin, Vector3Add(origin, (Vector3) { 0, 0, 1 }), BLUE); //Z
 
 		//Level Collider
+		// currently doesnt work because of the custom shader.
 		//RES_DrawModelWiresEx(levelCollider, Vector3Zero(),Vector3Zero(),0,Vector3One(),GREEN);
 
 		Debug_RenderSpawnZones();
