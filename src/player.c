@@ -23,7 +23,6 @@ static ModelHandle model;
 
 static Model shadow;
 static Texture shadowTexture;
-static Vector3 shadowPos;
 
 static CH_AnimationController animController;
 
@@ -251,6 +250,8 @@ static void UpdatePlayerAim(Entity* p, float dt)
 static void RenderPlayer(Entity* p)
 {
 	//draw shadow
+	Vector3 shadowPos = p->groundPos;
+	shadowPos.y += 0.1f;
 	DrawModel(shadow, shadowPos, 1, WHITE);
 	CH_UpdateModelAnimation(&animController, model);
 	
@@ -293,8 +294,7 @@ static void UnloadPlayer(Entity* p)
 
 static void PlayerOnWorldHit(Entity* p, RayCollision groundHit)
 {
-	shadowPos = groundHit.point;
-	shadowPos.y += 0.1f;
+
 }
 
 static void PlayerOnCollision(Entity* p, Entity* other)

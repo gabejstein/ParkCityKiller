@@ -344,7 +344,7 @@ static void HandleCollisions_Level_Spheres(Entity* e)
 	Model* level = RES_GetModel(levelCollider);
 
 	Ray ray;
-	ray.position = e->transform.position;
+	ray.position = e->collider.center;
 	ray.direction = (Vector3){ 0,-1,0 };
 	RayCollision hit = { 0 };
 	hit.distance = INFINITY;
@@ -353,7 +353,7 @@ static void HandleCollisions_Level_Spheres(Entity* e)
 	for (int i = 0; i < level->meshCount; i++)
 	{
 		RayCollision newHit = GetRayCollisionMesh(ray, level->meshes[i], level->transform);
-		if (newHit.hit&& newHit.distance <= 0.5f && newHit.distance < hit.distance) //will need to also check bounding box distance later.
+		if (newHit.hit && newHit.distance < hit.distance) //will need to also check bounding box distance later.
 		{
 			hit = newHit;
 		}
@@ -361,16 +361,27 @@ static void HandleCollisions_Level_Spheres(Entity* e)
 
 	if (hit.hit)
 	{
-		e->transform.position.y = hit.point.y+0.1f;
-		e->velocity.y = 0.0f;
-		e->bGrounded = 1;
-		if (e->onWorldCollision)
-			e->onWorldCollision(e, hit);
+		if (hit.distance <= e->collider.radius)
+		{
+			e->collider.center.y = hit.point.y + e->collider.radius;
+			e->transform.position = Vector3Subtract(e->collider.center,e->collider.offset);
+			e->velocity.y = 0.0f;
+
+			//TODO: maybe store ground location in entities instead to deal with shadows, etc.
+			//Because the closest ground should be known whether the player is grounded or not.
+			if (e->onWorldCollision)
+				e->onWorldCollision(e, hit);
+			e->bGrounded = 1;
+		}
+		else
+		{
+			e->bGrounded = 0;
+		}
+
+		e->groundPos = hit.point;
+		
 	}
-	else
-	{
-		e->bGrounded = 0;
-	}
+	
 }
 
 Entity* NewEntity(void)

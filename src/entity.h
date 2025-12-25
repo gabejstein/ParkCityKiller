@@ -49,6 +49,7 @@ struct Entity
 	int bPassthrough;
 	CH_Transform transform;
 	Vector3 velocity;
+	Vector3 groundPos;
 	float mass;
 	void* data;
 	void (*update)(Entity* self, float);
