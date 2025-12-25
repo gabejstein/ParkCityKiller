@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <rlgl.h>
+#include <raymath.h>
 
 #ifndef MAX_FILENAME
 	#define MAX_FILENAME 256
@@ -298,4 +299,33 @@ Model* RES_GetModel(const ModelHandle m)
 	}
 
 	return &gResourceManager.models[m].model;
+}
+
+Vector3 RES_GetModelCenter(const ModelHandle m)
+{
+	int vertCount = 0;
+	Vector3 center = { 0 };
+	Model* model = RES_GetModel(m);
+	if (m)
+	{
+		for (int i = 0; i < model->meshCount; i++)
+		{
+			Mesh* mesh = &model->meshes[i];
+			if (!mesh->vertices)continue;
+
+			vertCount += mesh->vertexCount;
+			Vector3* verts = (Vector3*)mesh->vertices;
+			for (int j = 0; j < mesh->vertexCount; j++)
+				center = Vector3Add(center, verts[j]);
+		}
+
+		if (vertCount != 0)
+		{
+			center.x /= vertCount;
+			center.y /= vertCount;
+			center.z /= vertCount;
+		}
+	}
+
+	return center;
 }

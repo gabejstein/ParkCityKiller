@@ -19,6 +19,7 @@ static RenderTexture2D target;
 int main(int argc, char** argv)
 {
     InitRayLib();
+    InitMsgBox();
     InitGame();
 
     float deltaTime = 0.0f;
@@ -54,6 +55,7 @@ int main(int argc, char** argv)
         
         //Render Texture
         BeginDrawing();
+        ClearBackground(BLACK);
 
         DrawTexturePro(
             target.texture,
@@ -97,7 +99,6 @@ static void InitRayLib(void)
 
 static void InitGame(void)
 {
-    //PlayState_Start();
     memset(gGame.stateStack, 0, sizeof(gGame.stateStack));
     gGame.stateStackTop = 0;
     PushGameState(GetPlayState());

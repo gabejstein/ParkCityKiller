@@ -339,7 +339,7 @@ static void UpdateDeathCamera(float dt)
 	
 }
 
-static void HandleCollisions(Entity* e)
+static void HandleCollisions_Level_Spheres(Entity* e)
 {
 	Model* level = RES_GetModel(levelCollider);
 
@@ -412,7 +412,13 @@ static void UpdateEntities(float dt)
 				e->velocity.y += -GRAVITY * dt;
 
 			e->transform.position = Vector3Add(e->transform.position, e->velocity);
-			HandleCollisions(e);
+
+			if (e->collider.type == CT_SPHERE)
+			{
+				e->collider.center = Vector3Add(e->transform.position,e->collider.offset);
+				HandleCollisions_Level_Spheres(e);
+			}
+				
 
 		}
 	}
@@ -423,20 +429,10 @@ static void UpdateEntities(float dt)
 		Entity* e1 = &entities[i];
 		if (!e1->bActive) continue;
 
-		if (e1->collider.type == CT_SPHERE)
-		{
-			e1->collider.center = e1->transform.position;
-		}
-
 		for (int j = i + 1; j < curEntity; j++)
 		{
 			Entity* e2 = &entities[j];
 			if (!e2->bActive) continue;
-
-			if (e2->collider.type == CT_SPHERE)
-			{
-				e2->collider.center = e2->transform.position;
-			}
 
 			if (e1->collider.type == CT_SPHERE && e2->collider.type == CT_SPHERE)
 			{
@@ -513,7 +509,7 @@ static void DebugRenderEntities(void)
 
 		if (e->collider.type == CT_SPHERE)
 		{
-			DrawSphereWires(e->collider.center, e->collider.radius, 4, 4, GREEN);
+			DrawSphereWires(e->collider.center, e->collider.radius, 4, 6, GREEN);
 		}
 
 	}

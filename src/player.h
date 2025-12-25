@@ -19,6 +19,6 @@ typedef enum
 
 PLAYER_STATE GetPlayerState(void);
 
-Entity* NewPlayer(Entity* e, Vector3 position);
+void NewPlayer(Entity* e, Vector3 position);
 
 #endif

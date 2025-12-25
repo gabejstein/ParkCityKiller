@@ -54,7 +54,7 @@ PLAYER_STATE GetPlayerState(void)
 static void UpdatePlayerMove(Entity* p, float dt);
 static void UpdatePlayerAim(Entity* p, float dt);
 
-Entity* NewPlayer(Entity* e, Vector3 position)
+void NewPlayer(Entity* e, Vector3 position)
 {
 	e->update = UpdatePlayer;
 	e->render = RenderPlayer;
@@ -86,7 +86,8 @@ Entity* NewPlayer(Entity* e, Vector3 position)
 	e->mass = 1;
 	e->collider.type = CT_SPHERE;
 	e->collider.center = position;
-	e->collider.radius = 2.0f;
+	e->collider.offset = (Vector3){ 0,0.8,0 };
+	e->collider.radius = 0.9f;
 	e->bPassthrough = 0;
 
 	handBone = CH_GetBoneId(model, "hand.r");
@@ -101,7 +102,6 @@ Entity* NewPlayer(Entity* e, Vector3 position)
 	gunEmpty = RES_LoadSound("assets/sounds/gun_empty.wav");
 	gunCock = RES_LoadSound("assets/sounds/gun_hammer.wav");
 
-	return e;
 }
 
 static void UpdatePlayer(Entity* p, float dt)
@@ -256,15 +256,12 @@ static void RenderPlayer(Entity* p)
 	
 	RES_DrawModelEx(model, p->transform.position, (Vector3) { 0, 1, 0 }, p->transform.rotation.y, Vector3One());
 	
+	//Update: This code now actually works, but only for position. The object's local rotation still needs to be worked out.
 	/*Transform handBoneTrans = CH_GetBoneTransform(&animController, handBone);
-
-	Matrix handRot = MatrixRotate(UP, p->transform.rotation.y);
-	Matrix handMat = MatrixTranslate(p->transform.position.x, p->transform.position.y, p->transform.position.z);
-	handMat = MatrixMultiply(handRot, handMat);
-	Matrix handMatLocal = MatrixTranslate(handBoneTrans.translation.x, handBoneTrans.translation.y, handBoneTrans.translation.z);
-	handMat = MatrixMultiply(handMat, handMatLocal);
-
-	Vector3 handPos = (Vector3){ handMat.m12,handMat.m13,handMat.m14 };
+	Matrix playerRotMat = MatrixRotate(UP, p->transform.rotation.y*DEG2RAD);
+	Matrix playerTransMat = MatrixTranslate(p->transform.position.x, p->transform.position.y, p->transform.position.z);
+	Matrix handLocalMat = MatrixMultiply(playerRotMat, playerTransMat);
+	Vector3 handPos = Vector3Transform(handBoneTrans.translation, handLocalMat);
 
 	DrawCube(handPos, 0.3, 0.3, 0.3, GREEN);*/
 }
@@ -285,8 +282,7 @@ static void DebugRenderPlayer(Entity* p)
 		//DrawSphereWires(bonePos, 0.08, 4, 4, GREEN);
 	}
 
-	DrawSphereWires(p->collider.center, p->collider.radius, 4, 4, GREEN);
-	DrawSphereWires(p->transform.position, p->collider.radius, 4, 4, GREEN);
+	DrawSphereWires(p->transform.position, 0.2f, 4, 4, ORANGE);
 }
 
 static void UnloadPlayer(Entity* p)
@@ -309,11 +305,13 @@ static void PlayerOnCollision(Entity* p, Entity* other)
 	if (other->tag == ET_PICKUP)
 	{
 		PickupData* pickup = (PickupData*)other->data;
+		char msg[256]; //TODO: make the formatter built into the message box.
 		switch (pickup->type)
 		{
 		case PICKUP_AMMO:
 			gGame.playerStats.bullets += pickup->amount;
-			PushMsgBox("Picked up some ammo");
+			snprintf(msg, 256, "Picked up %d ammo",pickup->amount);
+			PushMsgBox(msg);
 			break;
 		case PICKUP_HEALTH:
 			gGame.playerStats.health += pickup->amount;
@@ -321,10 +319,12 @@ static void PlayerOnCollision(Entity* p, Entity* other)
 			break;
 		case PICKUP_MONEY:
 			gGame.playerStats.money += pickup->amount;
-			PushMsgBox("You got some cash.");
+			snprintf(msg, 256, "You got $%d", pickup->amount);
+			PushMsgBox(msg);
 			break;
 		case PICKUP_EXP:
-			PushMsgBox("You got some experience points.");
+			snprintf(msg,256, "You got %d experience points", pickup->amount);
+			PushMsgBox(msg);
 			break;
 		}
 

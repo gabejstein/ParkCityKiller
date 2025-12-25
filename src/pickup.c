@@ -7,7 +7,7 @@
 static PickupData PickupPool[MAX_PICKUPS];
 static int curPickup = 0;
 
-static Entity* NewPickupEntity(Entity* e);
+static void NewPickupEntity(Entity* e);
 
 static ModelHandle model[MAX_PICKUP_TYPES];
 
@@ -51,7 +51,7 @@ static void RenderPickup(Entity* e)
 	RES_DrawModelEx(e->model, e->transform.position,(Vector3) { 0,1,0 }, e->transform.rotation.y, Vector3One());
 }
 
-static Entity* NewPickupEntity(Entity* e)
+static void NewPickupEntity(Entity* e)
 {
 	e->bActive = 0; //should not be active until spawned.
 	e->update = UpdatePickup;
@@ -62,10 +62,11 @@ static Entity* NewPickupEntity(Entity* e)
 	//all collision logic will be handled by the player
 	e->tag = ET_PICKUP;
 	e->collider.type = CT_SPHERE;
-	e->collider.radius = 0.5f;
+	e->collider.radius = 1.0f;
+	//e->collider.offset = RES_GetModelCenter(model);
+	e->collider.offset = (Vector3){0, 0.5f, 0};
 	e->bFloat = 1;
 	e->bPassthrough = 1;
-	return e;
 }
 
 void SpawnPickup(Vector3 position, PICKUP_TYPE type, int amount)

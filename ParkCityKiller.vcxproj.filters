@@ -75,7 +75,7 @@
     <ClInclude Include="src\pauseMenuState.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\skybox.h">
+    <ClInclude Include="src\system\skybox.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -131,7 +131,7 @@
     <ClCompile Include="src\pauseMenuState.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\skybox.c">
+    <ClCompile Include="src\system\skybox.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

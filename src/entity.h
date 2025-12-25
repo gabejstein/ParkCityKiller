@@ -30,6 +30,7 @@ typedef enum
 typedef struct
 {
 	Vector3 center;
+	Vector3 offset;
 	COLLIDER_TYPE type;
 	union
 	{

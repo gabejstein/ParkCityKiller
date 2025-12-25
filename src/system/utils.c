@@ -18,3 +18,4 @@ int CheckPointInBox(const Vector3* point, const BoundingBox* box)
 
 	return 0;
 }
+

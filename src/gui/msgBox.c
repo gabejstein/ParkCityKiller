@@ -13,6 +13,14 @@ static int bHide = 0;
 
 static int x = 10, y = 10, width = VIRTUAL_WINDOW_W-20, height = 20;
 
+static Font font;
+
+void InitMsgBox(void)
+{
+	font = LoadFont("assets/fonts/Ac437_IBM_VGA_9x16.ttf");
+	SetTextureFilter(font.texture, TEXTURE_FILTER_POINT);
+	head = tail = 0;
+}
 
 void ResetMsgBox(void)
 {
@@ -56,6 +64,7 @@ void DrawMsgBox(void)
 
 	//text
 	const char* msg = msgQueue[tail];
-	int padding = 5;
+	int padding = 4;
 	DrawText(msg, x + padding, y + padding, 12, WHITE);
+	//DrawTextEx(font, msg, (Vector2) { x + padding, y + padding }, 16, 2, WHITE);
 }

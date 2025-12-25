@@ -211,7 +211,7 @@ static void EnemyOnCollision(Entity* self, Entity* other)
 
 }
 
-Entity* NewEnemy(Entity* e)
+void NewEnemy(Entity* e)
 {
 	e->update = UpdateEnemy;
 	e->render = RenderEnemy;
@@ -223,7 +223,6 @@ Entity* NewEnemy(Entity* e)
 	e->collider.radius = 2.0f;
 	e->tag = ET_ENEMY;
 
-	return e;
 }
 
 void InitEnemyPool(void)
