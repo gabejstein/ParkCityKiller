@@ -349,11 +349,13 @@ static void HandleCollisions_Level_Spheres(Entity* e)
 	RayCollision hit = { 0 };
 	hit.distance = INFINITY;
 
+	e->bGrounded = 0;
+
 	//Check ground
 	for (int i = 0; i < level->meshCount; i++)
 	{
 		RayCollision newHit = GetRayCollisionMesh(ray, level->meshes[i], level->transform);
-		if (newHit.hit && newHit.distance < hit.distance) //will need to also check bounding box distance later.
+		if (newHit.hit && newHit.distance < hit.distance)
 		{
 			hit = newHit;
 		}
@@ -367,19 +369,40 @@ static void HandleCollisions_Level_Spheres(Entity* e)
 			e->transform.position = Vector3Subtract(e->collider.center,e->collider.offset);
 			e->velocity.y = 0.0f;
 
-			//TODO: maybe store ground location in entities instead to deal with shadows, etc.
-			//Because the closest ground should be known whether the player is grounded or not.
 			if (e->onWorldCollision)
 				e->onWorldCollision(e, hit);
 			e->bGrounded = 1;
 		}
-		else
-		{
-			e->bGrounded = 0;
-		}
 
 		e->groundPos = hit.point;
 		
+	}
+
+	//Check Walls
+	ray.position = e->collider.center;
+	ray.direction = Vector3Normalize(e->velocity);
+	hit = (RayCollision){ 0 };
+	hit.distance = INFINITY;
+
+	for (int i = 0; i < level->meshCount; i++)
+	{
+		RayCollision newHit = GetRayCollisionMesh(ray, level->meshes[i], level->transform);
+		if (newHit.hit && newHit.distance < hit.distance)
+		{
+			hit = newHit;
+		}
+	}
+
+	if (hit.hit)
+	{
+		if (hit.distance < e->collider.radius)
+		{
+			float penetration = e->collider.radius - hit.distance;
+			Vector3 moveOffset = Vector3Scale(hit.normal, penetration);
+			e->collider.center = Vector3Add(e->collider.center , moveOffset);
+			e->transform.position = Vector3Subtract(e->collider.center, e->collider.offset);
+			e->velocity.x = e->velocity.z = 0;
+		}
 	}
 	
 }
@@ -420,16 +443,16 @@ static void UpdateEntities(float dt)
 		if (!e->bStatic)
 		{
 			if(!e->bFloat)
-				e->velocity.y += -GRAVITY * dt;
+				e->velocity.y += -GRAVITY;
 
-			e->transform.position = Vector3Add(e->transform.position, e->velocity);
+			e->transform.position = Vector3Add(e->transform.position, Vector3Scale(e->velocity, dt));
 
 			if (e->collider.type == CT_SPHERE)
 			{
 				e->collider.center = Vector3Add(e->transform.position,e->collider.offset);
 				HandleCollisions_Level_Spheres(e);
 			}
-				
+			
 
 		}
 	}

@@ -153,7 +153,7 @@ static void UpdatePlayer(Entity* p, float dt)
 		float angle = atan2f(dirVec.x, dirVec.y);
 		p->transform.rotation.y = angle * RAD2DEG - gGame.mainCamera.transform.rotation.y-90;
 
-		float moveOffset = magnitude * speed * dt;
+		float moveOffset = magnitude * speed;
 		p->velocity = (Vector3){ p->transform.forward.x * moveOffset,p->velocity.y,p->transform.forward.z * moveOffset };
 		
 	}
@@ -163,7 +163,7 @@ static void UpdatePlayer(Entity* p, float dt)
 		if (p->bGrounded)
 		{
 			p->bGrounded = 0;
-			p->velocity.y += 30 * dt;
+			p->velocity.y += 30;
 		}
 
 	}
