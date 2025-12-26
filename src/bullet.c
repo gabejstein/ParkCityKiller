@@ -11,32 +11,7 @@ static Entity* bulletPool[MAX_BULLETS];
 static BulletData bulletData[MAX_BULLETS];
 static int curBullet = 0;
 
-ParticleEmitter NewImpactEffect(Vector3 pos)
-{
-	ParticleEmitter emitter = (ParticleEmitter)
-	{
-		.position = pos,
-		.direction = (Vector3){0,1.0f,0},
-		.force = (Vector3){2.0,-9.0f,2.0f},
-		.speed = 0.2f,
-		.radius = 0.5f,
-		.time = 0.0f,
-		.spawnInterval = 0.8f,
-		.lifeRange = {0.2f,0.5f},
-		.sizeRange = {0.1f,0.2f},
-		.endSize = 0.4f,
-		.startColor = RED,
-		.endColor = ORANGE,
-		.emitCount = {5,10},
-		.emitType = EMIT_DEFAULT
-	};
-
-	//emitter.endColor.a = 0;
-
-	return emitter;
-}
-
-ParticleEmitter impact;
+static ParticleEmitter impact;
 
 static void RenderBullet(Entity* e)
 {
@@ -89,6 +64,7 @@ void InitBulletPool(void)
 			e->bActive = 0;
 			e->bFloat = 1;
 			e->bPassthrough = 1;
+			e->bStatic = 0;
 			BulletData* b = &bulletData[i];
 			b->shooter = ET_NULL;
 			b->damage = 1;
@@ -103,7 +79,23 @@ void InitBulletPool(void)
 		}
 	}
 
-	impact = NewImpactEffect((Vector3) { 5, 0, 5 });
+	impact = (ParticleEmitter)
+	{
+		.position = Vector3Zero(),
+		.direction = (Vector3){0,1.0f,0},
+		.force = (Vector3){2.0,-9.0f,2.0f},
+		.speed = 0.2f,
+		.radius = 0.5f,
+		.time = 0.0f,
+		.spawnInterval = 0.8f,
+		.lifeRange = {0.2f,0.5f},
+		.sizeRange = {0.1f,0.2f},
+		.endSize = 0.4f,
+		.startColor = RED,
+		.endColor = ORANGE,
+		.emitCount = {5,10},
+		.emitType = EMIT_DEFAULT
+	};
 }
 
 void SpawnBullet(Vector3 pos, Vector3 vel, ENT_TAG shooter)

@@ -14,6 +14,7 @@
 #define MAX_FILENAME 256
 
 #define GRAVITY 1.6f
+#define MAX_FALL -100.0f
 
 #define UP (Vector3){0,1,0}
 

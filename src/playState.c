@@ -416,6 +416,7 @@ Entity* NewEntity(void)
 	memset(e, 0, sizeof(Entity));
 	e->bActive = 1;
 	e->transform.rotation = Vector3Zero();
+	e->collider.offset = Vector3Zero();
 
 	return e;
 }
@@ -442,9 +443,12 @@ static void UpdateEntities(float dt)
 
 		if (!e->bStatic)
 		{
-			if(!e->bFloat)
+			if (!e->bFloat)
+			{
 				e->velocity.y += -GRAVITY;
-
+				e->velocity.y = MAX(e->velocity.y, MAX_FALL); //clamp fall velocity to prevent tunneling. Should probably do this for all directions.
+			}
+				
 			e->transform.position = Vector3Add(e->transform.position, Vector3Scale(e->velocity, dt));
 
 			if (e->collider.type == CT_SPHERE)

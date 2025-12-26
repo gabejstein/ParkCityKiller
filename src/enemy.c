@@ -111,7 +111,7 @@ static void UpdateAttack(Entity* e, Enemy* enemy, float dt)
 		Vector3 head = Vector3Add(e->transform.position, (Vector3) { 0, 1.0, 0 });
 		Vector3 fireVel = Vector3Subtract(Vector3Add(player->transform.position, (Vector3) { 0, 1.0, 0 }), head);
 		fireVel = Vector3Normalize(fireVel);
-		fireVel = Vector3Scale(fireVel, 0.5f);
+		fireVel = Vector3Scale(fireVel, 30.0f);
 		SpawnBullet(head, fireVel, e->tag);
 
 		enemy->waitTimer = GetRandomFloat(attackWaitMin,attackWaitMax);
@@ -132,7 +132,6 @@ static void UpdatePursue(Entity* e, Enemy* enemy, float dt)
 		Vector3 playerVec = Vector3Subtract(player->transform.position, e->transform.position);
 		Vector3 heading = Vector3Normalize(playerVec);
 		e->velocity = Vector3Scale(heading, runSpeed);
-		e->velocity = Vector3Scale(e->velocity, dt);
 	}
 }
 
@@ -142,7 +141,7 @@ static void UpdateEscape(Entity* e, Enemy* enemy, float dt)
 	escapeVel = Vector3Normalize(escapeVel);
 	escapeVel.y = 0; //we just want to run along x,z
 	escapeVel = Vector3Scale(escapeVel, runSpeed*0.7);
-	e->velocity = Vector3Scale(escapeVel, dt);
+	e->velocity = escapeVel;
 
 	FaceObject(e, Vector3Add(e->transform.position, escapeVel), dt);
 }
@@ -179,6 +178,7 @@ static void EnemyOnCollision(Entity* self, Entity* other)
 			{
 				enemySelf->state = ENEMY_STATE_DEAD;
 				self->collider.type = CT_NULL;
+				self->bStatic = 1;
 
 				if (GetRandomValue(1, 10) > 6)
 				{
@@ -216,11 +216,11 @@ void NewEnemy(Entity* e)
 	e->update = UpdateEnemy;
 	e->render = RenderEnemy;
 	e->onCollision = EnemyOnCollision;
-	e->bFloat = 1;
 	e->health = 3;
 	e->mass = 2;
 	e->collider.type = CT_SPHERE;
 	e->collider.radius = 2.0f;
+	e->collider.offset = (Vector3){ 0,1,0 };
 	e->tag = ET_ENEMY;
 
 }
@@ -260,6 +260,7 @@ Enemy* SpawnEnemy(Vector3 pos)
 	enemy->entity->transform.position = pos;
 	enemy->entity->bActive = 1;
 	enemy->entity->collider.type = CT_SPHERE;
+	enemy->entity->bStatic = 0;
 
 	return enemy;
 }

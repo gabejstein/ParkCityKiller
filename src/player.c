@@ -229,7 +229,7 @@ static void UpdatePlayerAim(Entity* p, float dt)
 		{
 			Vector3 firingPos = (Vector3){ 0,1.0f,0 };
 			firingPos = Vector3Add(p->transform.position, firingPos);
-			Vector3 bulletVel = Vector3Scale(p->transform.forward, 0.5f);
+			Vector3 bulletVel = Vector3Scale(p->transform.forward, 40.0f);
 			SpawnBullet(firingPos, bulletVel, p->tag);
 			gGame.playerStats.bullets--;
 			RES_PlaySound(gunSilencer);
