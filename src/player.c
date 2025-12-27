@@ -122,7 +122,7 @@ static void UpdatePlayer(Entity* p, float dt)
 			playerState = PLAYER_STATE_MOVE;
 	}
 	
-	if (IsGamepadButtonDown(gamepad, GAMEPAD_BUTTON_LEFT_TRIGGER_2))
+	if (IsGamepadButtonDown(gamepad, GAMEPAD_BUTTON_LEFT_TRIGGER_2) && p->bGrounded)
 	{
 		if (playerState != PLAYER_STATE_AIM)
 			RES_PlaySound(gunCock);
@@ -162,7 +162,6 @@ static void UpdatePlayer(Entity* p, float dt)
 	{
 		if (p->bGrounded)
 		{
-			p->bGrounded = 0;
 			p->velocity.y += 30;
 		}
 
@@ -188,7 +187,7 @@ static void UpdatePlayer(Entity* p, float dt)
 		//TODO: if velocity is positive, play jump anim, else play fall anim
 		if(p->velocity.y>0)
 			CH_PlayAnimationByIndex(&animController, ANIM_JUMP);
-		else
+		else if(p->velocity.y < 0)
 			CH_PlayAnimationByIndex(&animController, ANIM_FALL);
 		CH_UpdateAnimationController(&animController, dt);
 	}

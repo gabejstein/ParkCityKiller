@@ -46,6 +46,7 @@ struct Entity
 	int bStatic; //TODO: use bit flags for all of these.
 	int bFloat;
 	int bGrounded;
+	int bWasGrounded;
 	int bPassthrough;
 	CH_Transform transform;
 	Vector3 velocity;

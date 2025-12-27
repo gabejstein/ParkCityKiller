@@ -69,6 +69,7 @@ int main(int argc, char** argv)
         deltaTime = GetFrameTime();
         deltaTime = MIN(deltaTime, 0.05);
 
+        //printf("Frame Time: %f\n", deltaTime);
     }
 
     CloseWindow();
@@ -84,7 +85,7 @@ static void InitRayLib(void)
     InitWindow(screenWidth, screenHeight, "Park City Killer");
     SetWindowMinSize(VIRTUAL_WINDOW_W, VIRTUAL_WINDOW_H);
 
-    //SetTargetFPS(30);
+    //SetTargetFPS(15);
 
     //Create render texture
     target = LoadRenderTexture(VIRTUAL_WINDOW_W, VIRTUAL_WINDOW_H);

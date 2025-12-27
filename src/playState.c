@@ -20,7 +20,6 @@ static void PlayState_Render(void);
 static void UpdatePlayerCamera(float dt);
 static void UpdateDeathCamera(float dt);
 static void PlayState_Unload(void);
-static void HandleCollisions(Entity* e);
 static void ResolveSphereCollision(Entity* e1, Entity* e2);
 
 //entities
@@ -112,7 +111,7 @@ static void PlayState_Start(void)
 	Enemy_SetPlayer(player);
 
 	//just for testing purposes. delete later.
-	SpawnEnemy((Vector3) { 40, 0, -10 });
+	//SpawnEnemy((Vector3) { 40, 0, -10 });
 
 	for (int i = 0; i < 15; i++)
 	{
@@ -122,10 +121,20 @@ static void PlayState_Start(void)
 		pos.z = GetRandomValue(-176, 158);
 		SpawnRandomPickup(pos);
 	}
+
+	/*for (int i = 0; i < 50; i++)
+	{
+		Vector3 pos;
+		pos.x = GetRandomValue(-130, 260);
+		pos.y = 0;
+		pos.z = GetRandomValue(-176, 158);
+		SpawnEnemy(pos);
+	}*/
 	
 	printf("Entites in scene: %d\n", curEntity);
 
-	levelModel = RES_LoadModel("assets/models/super_mega_world4.glb");
+	//levelModel = RES_LoadModel("assets/models/super_mega_world4.glb");
+	levelModel = RES_LoadModel("assets/models/playground_01.glb");
 	//levelModel = RES_LoadModel("assets/models/hotel_01.glb");
 	levelCollider = levelModel;
 
@@ -242,7 +251,7 @@ static void PlayState_Render(void)
 	if (GetPlayerState() == PLAYER_STATE_DEAD)
 		DrawText("HEALTHY GONE!!\nYOU ALL OVER!!",60,50,24,WHITE);
 
-
+	//printf("Vel y: %f\n", player->velocity.y);
 }
 
 static RayCollision HandleCameraCollisions(Vector3 target)
@@ -318,7 +327,7 @@ static void UpdatePlayerCamera(float dt)
 	else if (GetPlayerState()==PLAYER_STATE_AIM)
 	{
 		followDist = -2.0f;
-		playerTarget.y = 1.5f;
+		playerTarget.y = player->transform.position.y + 1.3f;
 		playerTarget = Vector3Add(playerTarget,Vector3Scale(player->transform.right,-0.3f));
 		lookOffset = Vector3Add(lookOffset, Vector3Scale(player->transform.right, -0.3f));
 
@@ -349,7 +358,7 @@ static void HandleCollisions_Level_Spheres(Entity* e)
 	RayCollision hit = { 0 };
 	hit.distance = INFINITY;
 
-	e->bGrounded = 0;
+	//e->bGrounded = 0;
 
 	//Check ground
 	for (int i = 0; i < level->meshCount; i++)
@@ -365,18 +374,33 @@ static void HandleCollisions_Level_Spheres(Entity* e)
 	{
 		if (hit.distance <= e->collider.radius)
 		{
-			e->collider.center.y = hit.point.y + e->collider.radius;
-			e->transform.position = Vector3Subtract(e->collider.center,e->collider.offset);
-			e->velocity.y = 0.0f;
-
+			
 			if (e->onWorldCollision)
 				e->onWorldCollision(e, hit);
+
+			e->collider.center.y = hit.point.y + e->collider.radius;
+			e->bWasGrounded = e->bGrounded;
 			e->bGrounded = 1;
+			e->velocity.y = 0;
 		}
+		else
+			e->bGrounded = 0;
 
 		e->groundPos = hit.point;
 		
 	}
+
+	//currently doesnt work.
+	/*if (!e->bGrounded && e->bWasGrounded && e->velocity.y < 0)
+	{
+		if (hit.distance < 0.075f)
+		{
+			e->collider.center.y = hit.point.y + e->collider.radius;
+			e->bGrounded = 1;
+			e->velocity.y = 0;
+		}
+		
+	}*/
 
 	//Check Walls
 	ray.position = e->collider.center;
@@ -400,10 +424,11 @@ static void HandleCollisions_Level_Spheres(Entity* e)
 			float penetration = e->collider.radius - hit.distance;
 			Vector3 moveOffset = Vector3Scale(hit.normal, penetration);
 			e->collider.center = Vector3Add(e->collider.center , moveOffset);
-			e->transform.position = Vector3Subtract(e->collider.center, e->collider.offset);
 			e->velocity.x = e->velocity.z = 0;
 		}
 	}
+
+	e->transform.position = Vector3Subtract(e->collider.center, e->collider.offset);
 	
 }
 

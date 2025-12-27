@@ -14,7 +14,7 @@
 #define MAX_FILENAME 256
 
 #define GRAVITY 1.6f
-#define MAX_FALL -100.0f
+#define MAX_FALL -78.0f //this value works well for non time-stepped checks. Dont change it unless there are multiple steps.
 
 #define UP (Vector3){0,1,0}
 
