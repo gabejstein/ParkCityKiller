@@ -32,6 +32,7 @@ typedef struct
 	Vector3 center;
 	Vector3 offset;
 	COLLIDER_TYPE type;
+	int timeStep;
 	union
 	{
 		float radius;
@@ -46,10 +47,10 @@ struct Entity
 	int bStatic; //TODO: use bit flags for all of these.
 	int bFloat;
 	int bGrounded;
-	int bWasGrounded;
 	int bPassthrough;
 	CH_Transform transform;
 	Vector3 velocity;
+	Vector3 acceleration;
 	Vector3 groundPos;
 	float mass;
 	void* data;

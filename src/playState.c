@@ -27,6 +27,7 @@ static void ResolveSphereCollision(Entity* e1, Entity* e2);
 static Entity entities[MAX_ENTITY];
 static int curEntity = 0;
 static Entity* player;
+static Vector3 startPos;
 
 static void UpdateEntities(float dt);
 static void RenderEntities(void);
@@ -102,6 +103,7 @@ static void PlayState_Start(void)
 
 	player = NewEntity();
 	NewPlayer(player, (Vector3) {4.0f,3.0f,4.0f});
+	startPos = player->transform.position;
 
 	InitBulletPool();
 	InitEnemyPool();
@@ -202,6 +204,12 @@ static void PlayState_Update(float dt)
 
 	/*if (GetKeyPressed(KEY_L))
 		ChangeLevel(LEVEL_HOTEL, (Vector3) { 0, 2, 0 });*/
+
+	if (IsKeyPressed(KEY_L))
+	{
+		player->transform.position = startPos;
+		player->velocity = Vector3Zero();
+	}
 
 	if (IsGamepadButtonPressed(0, GAMEPAD_BUTTON_MIDDLE_RIGHT))
 	{
@@ -348,19 +356,16 @@ static void UpdateDeathCamera(float dt)
 	
 }
 
-static void HandleCollisions_Level_Spheres(Entity* e)
+static RayCollision GetClosestLevelCollision(Vector3 position, Vector3 direction)
 {
 	Model* level = RES_GetModel(levelCollider);
 
 	Ray ray;
-	ray.position = e->collider.center;
-	ray.direction = (Vector3){ 0,-1,0 };
+	ray.position = position;
+	ray.direction = direction;
 	RayCollision hit = { 0 };
 	hit.distance = INFINITY;
 
-	//e->bGrounded = 0;
-
-	//Check ground
 	for (int i = 0; i < level->meshCount; i++)
 	{
 		RayCollision newHit = GetRayCollisionMesh(ray, level->meshes[i], level->transform);
@@ -369,67 +374,91 @@ static void HandleCollisions_Level_Spheres(Entity* e)
 			hit = newHit;
 		}
 	}
+	return hit;
+
+}
+
+static void HandleWorldCollisions_Sphere(Entity* e, float dt)
+{
+	if(e->velocity.y < 0)
+		e->bGrounded = 0;
+
+	e->collider.center = Vector3Add(e->transform.position, e->collider.offset);
+
+	RayCollision hit = GetClosestLevelCollision(e->collider.center, (Vector3) { 0, -1, 0 });
+
+	if (hit.hit)
+	{
+		int notSlope = hit.normal.y > 0.6;
+		if (hit.distance <= e->collider.radius)
+		{
+
+			if (e->onWorldCollision)
+				e->onWorldCollision(e, hit);
+
+			if (notSlope)
+			{
+				e->bGrounded = 1;
+				e->velocity.y = 0;
+			}
+
+			e->collider.center.y -= hit.normal.y * (hit.distance - e->collider.radius);
+			if (!notSlope)
+			{
+				e->collider.center.x -= hit.normal.x * (hit.distance - e->collider.radius);
+				e->collider.center.z -= hit.normal.z * (hit.distance - e->collider.radius);
+			}
+
+
+		}
+
+		//2nd check with slight step buffer for going down slopes.
+		if (!e->bGrounded && hit.distance <= e->collider.radius + 0.4f && e->velocity.y < 0)
+		{
+			if (notSlope)
+			{
+				e->collider.center.y -= hit.normal.y * (hit.distance - e->collider.radius);
+				e->bGrounded = 1;
+			}
+		}
+
+		e->groundPos = hit.point;
+	}
+
+	//get wall collisions
+	Vector3 direction = Vector3Normalize(e->velocity);
+	//direction.y = 0;
+
+	hit = GetClosestLevelCollision(e->collider.center, direction);
 
 	if (hit.hit)
 	{
 		if (hit.distance <= e->collider.radius)
 		{
-			
 			if (e->onWorldCollision)
 				e->onWorldCollision(e, hit);
 
-			e->collider.center.y = hit.point.y + e->collider.radius;
-			e->bWasGrounded = e->bGrounded;
-			e->bGrounded = 1;
-			e->velocity.y = 0;
-		}
-		else
-			e->bGrounded = 0;
+			int notSlope = hit.normal.y > 0.6;
+			if (notSlope)
+			{
+				e->bGrounded = 1;
+				e->velocity.y = 0;
+			}
 
-		e->groundPos = hit.point;
-		
-	}
+			e->collider.center.y -= hit.normal.y * (hit.distance - e->collider.radius);
+			if (!notSlope)
+			{
+				e->collider.center.x -= hit.normal.x * (hit.distance - e->collider.radius);
+				e->collider.center.z -= hit.normal.z * (hit.distance - e->collider.radius);
+			}
 
-	//currently doesnt work.
-	/*if (!e->bGrounded && e->bWasGrounded && e->velocity.y < 0)
-	{
-		if (hit.distance < 0.075f)
-		{
-			e->collider.center.y = hit.point.y + e->collider.radius;
-			e->bGrounded = 1;
-			e->velocity.y = 0;
-		}
-		
-	}*/
-
-	//Check Walls
-	ray.position = e->collider.center;
-	ray.direction = Vector3Normalize(e->velocity);
-	hit = (RayCollision){ 0 };
-	hit.distance = INFINITY;
-
-	for (int i = 0; i < level->meshCount; i++)
-	{
-		RayCollision newHit = GetRayCollisionMesh(ray, level->meshes[i], level->transform);
-		if (newHit.hit && newHit.distance < hit.distance)
-		{
-			hit = newHit;
-		}
-	}
-
-	if (hit.hit)
-	{
-		if (hit.distance < e->collider.radius)
-		{
-			float penetration = e->collider.radius - hit.distance;
-			Vector3 moveOffset = Vector3Scale(hit.normal, penetration);
-			e->collider.center = Vector3Add(e->collider.center , moveOffset);
-			e->velocity.x = e->velocity.z = 0;
 		}
 	}
 
 	e->transform.position = Vector3Subtract(e->collider.center, e->collider.offset);
-	
+	//doing this for now because the shadow needs to keep up with the player
+	e->groundPos.x = e->transform.position.x;
+	e->groundPos.z = e->transform.position.z;
 }
 
 Entity* NewEntity(void)
@@ -442,6 +471,7 @@ Entity* NewEntity(void)
 	e->bActive = 1;
 	e->transform.rotation = Vector3Zero();
 	e->collider.offset = Vector3Zero();
+	e->collider.timeStep = 1;
 
 	return e;
 }
@@ -470,16 +500,21 @@ static void UpdateEntities(float dt)
 		{
 			if (!e->bFloat)
 			{
-				e->velocity.y += -GRAVITY;
-				e->velocity.y = MAX(e->velocity.y, MAX_FALL); //clamp fall velocity to prevent tunneling. Should probably do this for all directions.
+				e->acceleration.y += -GRAVITY;
 			}
-				
+
+			e->velocity = Vector3Add(e->velocity, Vector3Scale(e->acceleration, dt));
+			e->velocity.y = MAX(e->velocity.y, MAX_FALL);
+			e->velocity.x = MAX(MIN(MAX_HOR_VEL, e->velocity.x), -MAX_HOR_VEL);
+			e->velocity.z = MAX(MIN(MAX_HOR_VEL, e->velocity.z), -MAX_HOR_VEL);
+			
 			e->transform.position = Vector3Add(e->transform.position, Vector3Scale(e->velocity, dt));
+
+			e->acceleration = Vector3Zero();
 
 			if (e->collider.type == CT_SPHERE)
 			{
-				e->collider.center = Vector3Add(e->transform.position,e->collider.offset);
-				HandleCollisions_Level_Spheres(e);
+				HandleWorldCollisions_Sphere(e,dt);
 			}
 			
 

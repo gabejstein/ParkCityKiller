@@ -9,7 +9,7 @@
 static const float speed = 15.0f;
 static const float turnSpeed = 200.0f;
 static float jumpForce = 0.0;
-static const float jumpHeight = 4.0f;
+static const float jumpHeight = 6.0f;
 static float hurtTimer = 0;
 
 static void UpdatePlayer(Entity* p, float dt);
@@ -162,7 +162,8 @@ static void UpdatePlayer(Entity* p, float dt)
 	{
 		if (p->bGrounded)
 		{
-			p->velocity.y += 30;
+			p->bGrounded = 0;
+			p->velocity.y += jumpForce;
 		}
 
 	}
@@ -185,10 +186,12 @@ static void UpdatePlayer(Entity* p, float dt)
 	else
 	{
 		//TODO: if velocity is positive, play jump anim, else play fall anim
-		if(p->velocity.y>0)
+		//Comment this out because its distracting for debugging the physics.
+		if(p->velocity.y > 0)
 			CH_PlayAnimationByIndex(&animController, ANIM_JUMP);
-		else if(p->velocity.y < 0)
+		else
 			CH_PlayAnimationByIndex(&animController, ANIM_FALL);
+		
 		CH_UpdateAnimationController(&animController, dt);
 	}
 	
@@ -283,6 +286,9 @@ static void DebugRenderPlayer(Entity* p)
 	}
 
 	DrawSphereWires(p->transform.position, 0.2f, 4, 4, ORANGE);
+
+	//Draw Jump height
+	DrawSphereWires((Vector3) { p->transform.position.x, p->groundPos.y + jumpHeight, p->transform.position.z }, 0.2, 4, 4, RED);
 }
 
 static void UnloadPlayer(Entity* p)

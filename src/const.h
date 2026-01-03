@@ -13,8 +13,12 @@
 
 #define MAX_FILENAME 256
 
-#define GRAVITY 1.6f
-#define MAX_FALL -78.0f //this value works well for non time-stepped checks. Dont change it unless there are multiple steps.
+#define FPS 60
+
+static const float SECS_PER_FRAME = 1.0f / FPS;
+static const float GRAVITY = 50.6f;
+static const float MAX_FALL = -58.0f;
+static const float MAX_HOR_VEL = 58.0f;
 
 #define UP (Vector3){0,1,0}
 
