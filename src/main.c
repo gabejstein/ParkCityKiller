@@ -175,6 +175,7 @@ static int CheckNextLevel(void)
     ChangeGameState(GetPlayState());
 
     gGame.nextLevel = LEVEL_NULL;
+    gGame.nextSpawn[0] = '\0';
 
     return 1;
 }

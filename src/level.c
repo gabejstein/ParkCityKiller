@@ -25,7 +25,7 @@ static void LoadOverworld(Level* level)
 		.levelId = LEVEL_HOTEL,
 		.position = (Vector3){10,0,10},
 		.size = (Vector3){5,5,5},
-		.spawnId = "lobby"
+		.spawnId = "counter"
 	};
 
 	level->portals[0].box = (BoundingBox)
@@ -40,7 +40,14 @@ static void LoadOverworld(Level* level)
 		}
 	};
 
-	
+	level->spawnPointCount = 1;
+	level->spawnPoints = (SpawnPoint*)malloc(sizeof(SpawnPoint) * level->spawnPointCount);
+
+	level->spawnPoints[0] = (SpawnPoint) {
+		.id = "entrance",
+		.pos = (Vector3){42.7f,5.1f,-43.35f},
+		.rotY = 0
+	};
 }
 
 static void LoadHotel(Level* level)
@@ -64,7 +71,7 @@ static void LoadHotel(Level* level)
 	level->spawnPoints[1] = (SpawnPoint){
 		.id = "counter",
 		.pos = (Vector3){0.25f,0.5f,-20.6f},
-		.rotY = 0
+		.rotY = 90
 	};
 
 	level->portalCount = 1;
@@ -141,7 +148,6 @@ void Level_Unload(Level* level)
 		free(level->portals);
 	}
 		
-
 	if (level->spawnPointCount)
 	{
 		free(level->spawnPoints);
@@ -166,17 +172,22 @@ void Level_DebugRender(Level* level)
 {
 	if (!level->portalCount)return;
 
+	//TODO: Draw overlay of id as well
 	for (int i = 0; i < level->portalCount; i++)
 		DrawBoundingBox(level->portals[i].box, BLUE);
+
+	//TODO: Draw overlay of id as well
+	for (int i = 0; i < level->spawnPointCount; i++)
+		DrawSphereWires(level->spawnPoints[i].pos, 0.4, 4, 4, ORANGE);
 }
 
 void Level_SetNext(LEVEL_DEF_ID levelId, char* spawnId)
 {
 	gGame.nextLevel = levelId;
-	strcpy(gGame.nextSpawn, spawnId);
+	
+	if (!spawnId)return;
 
-	/*char* p = spawnId;
+	char* p = spawnId;
 	char* out = gGame.nextSpawn;
-	while (*p)
-		*out = *(p++);*/
+	while ((*out++ = *p++));
 }

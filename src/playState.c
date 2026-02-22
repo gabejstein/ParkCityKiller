@@ -15,6 +15,7 @@
 
 #include "spawnZone.h"
 #include "gui/selectionList.h"
+#include "gui/msgBox.h"
 #include "pauseMenuState.h"
 
 #include "const.h"
