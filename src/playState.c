@@ -163,6 +163,10 @@ static void PlayState_Update(float dt)
 	if (IsKeyPressed(KEY_J))
 		Level_SetNext(LEVEL_HOTEL, NULL);
 
+	if (IsKeyPressed(KEY_P))
+		printf("Player Pos: %f %f %f\n", player->transform.position.x, player->transform.position.y, player->transform.position.z);
+
+
 	if (IsKeyPressed(KEY_L))
 	{
 		player->transform.position = startPos;

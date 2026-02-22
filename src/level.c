@@ -1,6 +1,7 @@
 #include "level.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "playState.h"
 #include "system/utils.h"
 #include "entity/player.h"
@@ -24,7 +25,7 @@ static void LoadOverworld(Level* level)
 		.levelId = LEVEL_HOTEL,
 		.position = (Vector3){10,0,10},
 		.size = (Vector3){5,5,5},
-		.spawnId = NULL
+		.spawnId = "lobby"
 	};
 
 	level->portals[0].box = (BoundingBox)
@@ -38,6 +39,8 @@ static void LoadOverworld(Level* level)
 			level->portals[0].position.x + level->portals[0].size.x / 2,level->portals[0].position.y + level->portals[0].size.y,level->portals[0].position.z + level->portals[0].size.z / 2
 		}
 	};
+
+	
 }
 
 static void LoadHotel(Level* level)
@@ -48,6 +51,45 @@ static void LoadHotel(Level* level)
 
 	level->player = NewEntity();
 	NewPlayer(level->player, (Vector3) { 0.0f, 0.0f, 0.0f });
+
+	level->spawnPointCount = 2;
+	level->spawnPoints = (SpawnPoint*) malloc(sizeof(SpawnPoint) * level->spawnPointCount);
+
+	level->spawnPoints[0] = (SpawnPoint) {
+		.id = "lobby",
+		.pos = (Vector3){0,0,0},
+		.rotY = 0
+	};
+
+	level->spawnPoints[1] = (SpawnPoint){
+		.id = "counter",
+		.pos = (Vector3){0.25f,0.5f,-20.6f},
+		.rotY = 0
+	};
+
+	level->portalCount = 1;
+	level->portals = (LevelPortal*)malloc(sizeof(LevelPortal) * level->portalCount);
+	memset(level->portals, 0, sizeof(LevelPortal)* level->portalCount);
+
+	level->portals[0] = (LevelPortal){
+		.levelId = LEVEL_OVERWORLD,
+		.position = (Vector3){0.49f,0.1f,5.45f},
+		.size = (Vector3){3,3,3},
+		.spawnId = "entrance"
+	};
+
+	level->portals[0].box = (BoundingBox)
+	{
+		(Vector3)
+		{
+			level->portals[0].position.x - level->portals[0].size.x / 2,level->portals[0].position.y,level->portals[0].position.z - level->portals[0].size.z / 2
+		},
+		(Vector3)
+		{
+			level->portals[0].position.x + level->portals[0].size.x / 2,level->portals[0].position.y + level->portals[0].size.y,level->portals[0].position.z + level->portals[0].size.z / 2
+		}
+	};
+	
 }
 
 static Level levelDB[MAX_LEVELS] = {
@@ -75,6 +117,17 @@ void Level_Load(Level* level)
 	if (level->load)
 		level->load(level);
 
+	SpawnPoint* end = level->spawnPoints + level->spawnPointCount;
+	for (SpawnPoint* cur = level->spawnPoints; cur < end; cur++)
+	{
+		if (strcmp(gGame.nextSpawn, cur->id) == 0)
+		{
+			level->player->transform.position = cur->pos;
+			level->player->transform.rotation.y = cur->rotY;
+			break;
+		}
+	}
+
 	printf("Level Load Complete\n");
 }
 
@@ -84,7 +137,16 @@ void Level_Unload(Level* level)
 		level->unload(level);
 
 	if (level->portalCount)
+	{
 		free(level->portals);
+	}
+		
+
+	if (level->spawnPointCount)
+	{
+		free(level->spawnPoints);
+	}
+		
 }
 
 void Level_Update(Level* level, float dt)
@@ -111,6 +173,7 @@ void Level_DebugRender(Level* level)
 void Level_SetNext(LEVEL_DEF_ID levelId, char* spawnId)
 {
 	gGame.nextLevel = levelId;
+	strcpy(gGame.nextSpawn, spawnId);
 
 	/*char* p = spawnId;
 	char* out = gGame.nextSpawn;
