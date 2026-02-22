@@ -1,7 +1,8 @@
 #ifndef PLAY_STATE_H
 #define PLAY_STATE_H
 
-#include "entity.h"
+#include "game.h"
+#include "entity/entity.h"
 
 GameState GetPlayState(void);
 Entity* NewEntity(void);

@@ -1,6 +1,7 @@
 #include "pickup.h"
-#include "playState.h"
-#include "common.h"
+#include "../playState.h"
+#include <raymath.h>
+#include <stdio.h>
 
 #define MAX_PICKUPS 100
 
@@ -65,8 +66,8 @@ static void NewPickupEntity(Entity* e)
 	e->collider.radius = 1.0f;
 	//e->collider.offset = RES_GetModelCenter(model);
 	e->collider.offset = (Vector3){0, 0.5f, 0};
-	e->bFloat = 1;
-	e->bPassthrough = 1;
+	SET_FLAG(e->flags, ET_FLAG_FLOAT);
+	SET_FLAG(e->flags, ET_FLAG_PASSTHROUGH);
 }
 
 void SpawnPickup(Vector3 position, PICKUP_TYPE type, int amount)

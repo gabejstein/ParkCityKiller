@@ -3,6 +3,10 @@
 
 #include <raylib.h>
 
+#define SET_FLAG(value,flag) (value) |= (flag)
+#define HAS_FLAG(value,flag) (((value) & (flag))!=0)
+#define CLEAR_FLAG(value,flag) (value) &= ~(flag)
+
 float GetRandomFloat(float min, float max);
 int CheckPointInBox(const Vector3* point, const BoundingBox* box);
 

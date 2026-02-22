@@ -10,4 +10,6 @@ typedef struct
     int popularity; //a kind of reputation system for getting into clubs and better jobs and stuff.
 }PlayerStats;
 
+void PlayerStats_Init(void);
+
 #endif

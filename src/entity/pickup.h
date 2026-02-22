@@ -1,7 +1,6 @@
 #ifndef PICKUP_H
 #define PICKUP_H
 
-#include <raylib.h>
 #include "entity.h"
 
 typedef enum

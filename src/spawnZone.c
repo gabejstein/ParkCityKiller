@@ -1,6 +1,7 @@
 #include "spawnZone.h"
-#include "common.h"
-#include "enemy.h"
+#include "entity/enemy.h"
+#include <raymath.h>
+#include "game.h"
 
 typedef struct
 {

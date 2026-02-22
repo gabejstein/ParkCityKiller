@@ -1,6 +1,7 @@
 #include "msgBox.h"
-#include "../common.h"
+#include "../const.h"
 #include <string.h>
+#include <raylib.h>
 
 #define MAX_MSG 256
 #define MAX_QUEUE 12

@@ -4,6 +4,7 @@
 #include <raylib.h>
 #include "level.h"
 #include "gameWorld.h"
+#include "system/transform.h"
 
 typedef struct
 {
@@ -37,16 +38,6 @@ void ChangeGameState(GameState newState);
 
 typedef struct
 {
-    Vector3 position;
-    Vector3 rotation;
-    Vector3 forward;
-    Vector3 right;
-    Vector3 up;
-    Vector3 scale;
-}CH_Transform;
-
-typedef struct
-{
     Camera* camera;
     CH_Transform transform;
     Vector3 followDistance;
@@ -74,6 +65,8 @@ typedef struct
     int bRunning;
     PlayerStats playerStats;
     Level* curLevel;
+    LEVEL_DEF_ID nextLevel;
+    char nextSpawn[256];
 }Game;
 
 extern Game gGame;

@@ -1,7 +1,7 @@
 #ifndef PAUSE_MENU_STATE_H
 #define PAUSE_MENU_STATE_H
 
-#include "main.h"
+#include "game.h"
 
 GameState GetPauseMenuState(void);
 

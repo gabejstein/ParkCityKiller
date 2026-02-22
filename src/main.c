@@ -1,13 +1,20 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "common.h"
+#include <raylib.h>
+#include <raymath.h>
+
+#include "const.h"
+#include "game.h"
 
 #include "playState.h"
 #include "titleState.h"
 
+#include "gui/msgBox.h"
+
 static void InitRayLib(void);
 static void Unload(void);
 static void InitGame(void);
+static int CheckNextLevel(void);
 
 int screenWidth = 1280;
 int screenHeight = 720;
@@ -34,6 +41,12 @@ int main(int argc, char** argv)
         gGame.virtualMouse.x = (mouse.x - (GetScreenWidth() - (VIRTUAL_WINDOW_W * scale)) * 0.5f) / scale;
         gGame.virtualMouse.y = (mouse.y - (GetScreenHeight() - (VIRTUAL_WINDOW_H * scale)) * 0.5f) / scale;
         gGame.virtualMouse = Vector2Clamp(gGame.virtualMouse,(Vector2) { 0, 0 },(Vector2) {VIRTUAL_WINDOW_W, VIRTUAL_WINDOW_H });
+
+        deltaTime = GetFrameTime();
+        deltaTime = MIN(deltaTime, SECS_PER_FRAME);
+
+        if (CheckNextLevel())
+            continue;
 
         //Update Logic Here
      
@@ -65,9 +78,6 @@ int main(int argc, char** argv)
             (Vector2) {0, 0}, 0.0f, WHITE);
 
         EndDrawing();
-
-        deltaTime = GetFrameTime();
-        deltaTime = MIN(deltaTime, SECS_PER_FRAME);
 
         //printf("Frame Time: %f\n", deltaTime);
     }
@@ -102,6 +112,10 @@ static void InitGame(void)
 {
     memset(gGame.stateStack, 0, sizeof(gGame.stateStack));
     gGame.stateStackTop = 0;
+    gGame.bDebugMode = 0;
+    gGame.curLevel = Level_GetLevel(LEVEL_OVERWORLD);
+    PlayerStats_Init();
+
     PushGameState(GetPlayState());
 }
 
@@ -147,4 +161,20 @@ void ChangeGameState(GameState newState)
         gGame.stateStack[gGame.stateStackTop].start();
 
     gGame.stateStackTop++;
+}
+
+static int CheckNextLevel(void)
+{
+    if (gGame.nextLevel < 0)
+        return 0;
+
+    Level_Unload(gGame.curLevel);
+
+    gGame.curLevel = Level_GetLevel(gGame.nextLevel);
+
+    ChangeGameState(GetPlayState());
+
+    gGame.nextLevel = LEVEL_NULL;
+
+    return 1;
 }

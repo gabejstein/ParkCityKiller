@@ -1,7 +1,6 @@
 #ifndef ENEMY_H
 #define ENEMY_H
 
-#include "common.h"
 #include "entity.h"
 
 typedef enum

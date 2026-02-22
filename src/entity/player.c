@@ -1,10 +1,13 @@
 #include "player.h"
 #include <raymath.h>
 #include <stdio.h>
-#include "common.h"
-#include "playState.h"
+#include "../playState.h"
 #include "bullet.h"
 #include "pickup.h"
+
+#include "../system/animation.h"
+#include "../const.h"
+#include "../gui/msgBox.h"
 
 static const float speed = 15.0f;
 static const float turnSpeed = 200.0f;
@@ -66,8 +69,11 @@ void NewPlayer(Entity* e, Vector3 position)
 
 	playerState = PLAYER_STATE_MOVE;
 
-	model = RES_LoadModel("assets/models/megaman_gun_test_01.glb");
-	CH_LoadAnimationController(&animController, "assets/models/megaman_gun_test_01.glb");
+	/*model = RES_LoadModel("assets/models/megaman_gun_test_01.glb");
+	CH_LoadAnimationController(&animController, "assets/models/megaman_gun_test_01.glb");*/
+
+	model = RES_LoadModel("assets/models/Beautiful_Body_01.glb");
+	CH_LoadAnimationController(&animController, "assets/models/Beautiful_Body_01.glb");
 
 	//Set animation settings
 	CH_SetClipLoopIndex(&animController, ANIM_IDLE, 1);
@@ -87,7 +93,6 @@ void NewPlayer(Entity* e, Vector3 position)
 	e->collider.center = position;
 	e->collider.offset = (Vector3){ 0,0.8,0 };
 	e->collider.radius = 0.9f;
-	e->bPassthrough = 0;
 
 	handBone = CH_GetBoneId(model, "hand.r");
 

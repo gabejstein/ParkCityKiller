@@ -1,6 +1,8 @@
 #include "bullet.h"
-#include "common.h"
-#include "playState.h"
+#include "../system/particle.h"
+#include "../playState.h"
+
+#include <raymath.h>
 
 //bullet pool
 #define MAX_BULLETS 100
@@ -62,9 +64,8 @@ void InitBulletPool(void)
 			e->onCollision = OnCollision;
 			e->tag = ET_BULLET;
 			e->bActive = 0;
-			e->bFloat = 1;
-			e->bPassthrough = 1;
-			e->bStatic = 0;
+			SET_FLAG(e->flags, ET_FLAG_PASSTHROUGH);
+			SET_FLAG(e->flags, ET_FLAG_FLOAT);
 			BulletData* b = &bulletData[i];
 			b->shooter = ET_NULL;
 			b->damage = 1;

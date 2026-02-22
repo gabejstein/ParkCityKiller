@@ -1,5 +1,5 @@
 #include "titleState.h"
-#include "common.h"
+#include <raylib.h>
 
 static const Color bgColor = { 229,215,194,255 };
 

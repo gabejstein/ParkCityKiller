@@ -1,16 +1,23 @@
 #include "playState.h"
-#include "common.h"
+#include "system/resource.h"
+#include "system/particle.h"
+#include <raymath.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "entity.h"
-#include "bullet.h"
-#include "player.h"
-#include "enemy.h"
-#include "pickup.h"
+
+#include "entity/entity.h"
+#include "entity/bullet.h"
+#include "entity/player.h"
+#include "entity/enemy.h"
+#include "entity/pickup.h"
+
 #include "spawnZone.h"
 #include "gui/selectionList.h"
 #include "pauseMenuState.h"
+
+#include "const.h"
 
 static const Color bgColor = { 0,0,0,255 };
 
@@ -41,44 +48,11 @@ static Camera camera = { 0 };
 TextureHandle background; //TODO: make this dependent on the level.
 static TextureHandle crossHair;
 
-static void InitPlayerStats(void)
-{
-	gGame.playerStats.bullets = 50;
-	gGame.playerStats.money = 500;
-	gGame.playerStats.health = 10;
-}
-
 static void DrawHud(void)
 {
 	int x = 10, y = VIRTUAL_WINDOW_H-20;
 	DrawText(TextFormat("Health: %d Bullets: %d Money: $%d", gGame.playerStats.health, gGame.playerStats.bullets, gGame.playerStats.money), x, y, 12, WHITE);
 	
-}
-
-static void ChangeLevel(LEVEL_DEF_ID id, Vector3 pos)
-{
-	/*if (gGame.curLevel->Unload)
-		gGame.curLevel->Unload(gGame.curLevel);*/
-
-	//PlayState_Unload();
-
-	gGame.curLevel = GetLevel(id);
-	if (gGame.curLevel)
-	{
-		if(gGame.curLevel->Load)
-			gGame.curLevel->Load(gGame.curLevel);
-
-		//TODO: should use the gGame's level reference directly instead of levelModel. This is temporary.
-		levelModel = gGame.curLevel->model;
-		levelCollider = gGame.curLevel->collisionModel;
-		player->transform.position = pos;
-		//PlayState_Start(); //wont work at the moment because it just loads the default.
-	}
-	else
-	{
-		printf("Could not change level.\n");
-		exit(0);
-	}
 }
 
 GameState GetPlayState(void)
@@ -95,22 +69,16 @@ GameState GetPlayState(void)
 
 static void PlayState_Start(void)
 {
-	gGame.bDebugMode = 0;
 	curEntity = 0;
 	memset(entities, 0, sizeof(entities));
-
-	InitPlayerStats();
-
-	player = NewEntity();
-	NewPlayer(player, (Vector3) {4.0f,3.0f,4.0f});
-	startPos = player->transform.position;
 
 	InitBulletPool();
 	InitEnemyPool();
 	InitPickupPool();
 	InitSpawnZones();
+	InitParticleSystem(&camera);
 
-	Enemy_SetPlayer(player);
+	ResetMsgBox();
 
 	//just for testing purposes. delete later.
 	//SpawnEnemy((Vector3) { 40, 0, -10 });
@@ -124,21 +92,18 @@ static void PlayState_Start(void)
 		SpawnRandomPickup(pos);
 	}
 
-	/*for (int i = 0; i < 50; i++)
-	{
-		Vector3 pos;
-		pos.x = GetRandomValue(-130, 260);
-		pos.y = 0;
-		pos.z = GetRandomValue(-176, 158);
-		SpawnEnemy(pos);
-	}*/
+	Level_Load(gGame.curLevel);
+
+	player = gGame.curLevel->player;
+	//NewPlayer(player, (Vector3) { 4.0f, 3.0f, 4.0f });
+	startPos = player->transform.position;
+
+	Enemy_SetPlayer(player);
 	
 	printf("Entites in scene: %d\n", curEntity);
 
-	//levelModel = RES_LoadModel("assets/models/super_mega_world4.glb");
-	levelModel = RES_LoadModel("assets/models/playground_01.glb");
-	//levelModel = RES_LoadModel("assets/models/hotel_01.glb");
-	levelCollider = levelModel;
+	levelModel = gGame.curLevel->model;
+	levelCollider = gGame.curLevel->collisionModel;
 
 	camera.position = (Vector3){ 3,3,3 };
 	camera.target = (Vector3){ 0.0f, 0.8f, 0.0f };
@@ -151,10 +116,6 @@ static void PlayState_Start(void)
 
 	background = RES_LoadTexture("assets/textures/skybox_03.png");
 	crossHair = RES_LoadTexture("assets/textures/Crosshair_01.png");
-
-	InitParticleSystem(&camera);
-
-	ResetMsgBox();
 
 }
 
@@ -178,16 +139,13 @@ static void PlayState_Unload(void)
 
 static void PlayState_Update(float dt)
 {
-	
+	Level_Update(gGame.curLevel, dt);
 	UpdateCamera(&camera, CAMERA_PERSPECTIVE);
 	Vector3 cameraDir = Vector3Subtract(camera.position, camera.target);
 	RES_UpdateShader(&camera.position, &cameraDir);
 	UpdateParticleSystem(dt);
 	UpdateMsgBox(dt);
-
 	UpdateEntities(dt);
-
-	float rightHor = GetGamepadAxisMovement(0, GAMEPAD_AXIS_RIGHT_X);
 
 	if (GetPlayerState() == PLAYER_STATE_DEAD)
 		UpdateDeathCamera(dt);
@@ -202,8 +160,8 @@ static void PlayState_Update(float dt)
 	if (IsKeyPressed(KEY_M))
 		PushMsgBox("This is a message");
 
-	/*if (GetKeyPressed(KEY_L))
-		ChangeLevel(LEVEL_HOTEL, (Vector3) { 0, 2, 0 });*/
+	if (IsKeyPressed(KEY_J))
+		Level_SetNext(LEVEL_HOTEL, NULL);
 
 	if (IsKeyPressed(KEY_L))
 	{
@@ -244,6 +202,7 @@ static void PlayState_Render(void)
 		//Level Collider
 		// currently doesnt work because of the custom shader.
 		//RES_DrawModelWiresEx(levelCollider, Vector3Zero(),Vector3Zero(),0,Vector3One(),GREEN);
+		Level_DebugRender(gGame.curLevel);
 
 		Debug_RenderSpawnZones();
 	}
@@ -496,9 +455,9 @@ static void UpdateEntities(float dt)
 		if (e->update)
 			e->update(e, dt);
 
-		if (!e->bStatic)
+		if (!HAS_FLAG(e->flags, ET_FLAG_STATIC))
 		{
-			if (!e->bFloat)
+			if (!HAS_FLAG(e->flags,ET_FLAG_FLOAT))
 			{
 				e->acceleration.y += -GRAVITY;
 			}
@@ -542,7 +501,7 @@ static void UpdateEntities(float dt)
 					if (e2->onCollision)
 						e2->onCollision(e2, e1);
 
-					if (!e1->bPassthrough && !e2->bPassthrough)
+					if (!HAS_FLAG(e1->flags, ET_FLAG_PASSTHROUGH) && !HAS_FLAG(e2->flags, ET_FLAG_PASSTHROUGH))
 					{
 						if (e1->mass > e2->mass)
 							ResolveSphereCollision(e1, e2);

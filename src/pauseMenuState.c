@@ -1,6 +1,6 @@
 #include "pauseMenuState.h"
-#include "common.h"
 #include "gui/selectionList.h"
+#include "const.h"
 
 static void PauseMenuState_Start(void);
 static void PauseMenuState_Update(float dt);

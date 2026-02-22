@@ -1,7 +1,9 @@
 #include "enemy.h"
-#include "playState.h"
+#include "../playState.h"
 #include "bullet.h"
 #include "pickup.h"
+
+#include <raymath.h>
 
 #define MAX_ENEMY 100
 
@@ -178,7 +180,7 @@ static void EnemyOnCollision(Entity* self, Entity* other)
 			{
 				enemySelf->state = ENEMY_STATE_DEAD;
 				self->collider.type = CT_NULL;
-				self->bStatic = 1;
+				SET_FLAG(self->flags, ET_FLAG_STATIC);
 
 				if (GetRandomValue(1, 10) > 6)
 				{
@@ -260,7 +262,7 @@ Enemy* SpawnEnemy(Vector3 pos)
 	enemy->entity->transform.position = pos;
 	enemy->entity->bActive = 1;
 	enemy->entity->collider.type = CT_SPHERE;
-	enemy->entity->bStatic = 0;
+	CLEAR_FLAG(enemy->entity->flags, ET_FLAG_STATIC);
 
 	return enemy;
 }

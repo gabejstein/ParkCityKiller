@@ -1,9 +1,11 @@
 #include "selectionList.h"
-#include "../common.h"
 #include <raylib.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#define MAX(a, b) ((a)>(b)? (a) : (b))
+#define MIN(a, b) ((a)<(b)? (a) : (b))
 
 //TODO: Need to abstract this stuff out into an input manager, so the whole game can use it.
 static float lastAxisDown = 0.0f;
