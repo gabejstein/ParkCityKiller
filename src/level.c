@@ -5,6 +5,7 @@
 #include "playState.h"
 #include "system/utils.h"
 #include "entity/player.h"
+#include "entity/npc.h"
 
 //These will just be used with function pointers to load entities and other values temporarily.
 //Eventually level data should be loaded from files.
@@ -15,7 +16,10 @@ static void LoadOverworld(Level* level)
 	level->collisionModel = level->model;
 
 	level->player = NewEntity();
-	NewPlayer(level->player, (Vector3) { 4.0f, 3.0f, 4.0f });
+	Player_New(level->player, (Vector3) { 4.0f, 3.0f, 4.0f });
+
+	Entity* npc1 = NewEntity();
+	NPC_New(npc1, (Vector3) { -0.98f, 0.1f, 22.8f }, 0);
 
 	level->portalCount = 1;
 	level->portals = (LevelPortal*) malloc(sizeof(LevelPortal) * level->portalCount);
@@ -42,6 +46,7 @@ static void LoadOverworld(Level* level)
 
 	level->spawnPointCount = 1;
 	level->spawnPoints = (SpawnPoint*)malloc(sizeof(SpawnPoint) * level->spawnPointCount);
+	memset(level->spawnPoints, 0, sizeof(SpawnPoint)* level->spawnPointCount);
 
 	level->spawnPoints[0] = (SpawnPoint) {
 		.id = "entrance",
@@ -57,10 +62,11 @@ static void LoadHotel(Level* level)
 	level->collisionModel = level->model;
 
 	level->player = NewEntity();
-	NewPlayer(level->player, (Vector3) { 0.0f, 0.0f, 0.0f });
+	Player_New(level->player, (Vector3) { 0.0f, 0.0f, 0.0f });
 
 	level->spawnPointCount = 2;
 	level->spawnPoints = (SpawnPoint*) malloc(sizeof(SpawnPoint) * level->spawnPointCount);
+	memset(level->spawnPoints, 0, sizeof(SpawnPoint)* level->spawnPointCount);
 
 	level->spawnPoints[0] = (SpawnPoint) {
 		.id = "lobby",

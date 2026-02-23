@@ -15,12 +15,12 @@ static float jumpForce = 0.0;
 static const float jumpHeight = 6.0f;
 static float hurtTimer = 0;
 
-static void UpdatePlayer(Entity* p, float dt);
-static void RenderPlayer(Entity* p);
-static void UnloadPlayer(Entity* p);
-static void DebugRenderPlayer(Entity* p);
-static void PlayerOnWorldHit(Entity* p, RayCollision groundHit);
-static void PlayerOnCollision(Entity* p, Entity* other);
+static void Player_Update(Entity* p, float dt);
+static void Player_Render(Entity* p);
+static void Player_Unload(Entity* p);
+static void Player_DebugRender(Entity* p);
+static void Player_OnWorldHit(Entity* p, RayCollision groundHit);
+static void Player_OnCollision(Entity* p, Entity* other);
 
 static ModelHandle model;
 
@@ -56,36 +56,53 @@ PLAYER_STATE GetPlayerState(void)
 static void UpdatePlayerMove(Entity* p, float dt);
 static void UpdatePlayerAim(Entity* p, float dt);
 
-void NewPlayer(Entity* e, Vector3 position)
+void Player_Common_Init(void)
 {
-	e->update = UpdatePlayer;
-	e->render = RenderPlayer;
-	e->unload = UnloadPlayer;
-	e->debugRender = DebugRenderPlayer;
-	e->onWorldCollision = PlayerOnWorldHit;
-	e->onCollision = PlayerOnCollision;
+	jumpForce = sqrtf(2 * GRAVITY * jumpHeight);
+	printf("jump force: %f\n", jumpForce);
+
+	model = RES_LoadModel("assets/models/Beautiful_Body_01.glb");
+	CH_LoadAnimationController(&animController, "assets/models/Beautiful_Body_01.glb");
+
+	shadow = LoadModelFromMesh(GenMeshPlane(2, 2, 1, 1));
+	shadowTexture = LoadTexture("assets/textures/shadow_02.png");
+	shadow.materials[0].maps[MATERIAL_MAP_ALBEDO].texture = shadowTexture;
+
+	//Sounds
+	gunSilencer = RES_LoadSound("assets/sounds/gun_silencer.wav");
+	gunEmpty = RES_LoadSound("assets/sounds/gun_empty.wav");
+	gunCock = RES_LoadSound("assets/sounds/gun_hammer.wav");
+
+	handBone = CH_GetBoneId(model, "hand.r");
+
+	if (handBone > -1)
+		printf("Found hand bone.\n");
+	else
+		printf("Could not find hand bone.\n");
+}
+
+void Player_Common_Unload(void)
+{
+	CH_UnloadAnimationController(&animController);
+}
+
+void Player_New(Entity* e, Vector3 position)
+{
+	e->update = Player_Update;
+	e->render = Player_Render;
+	e->unload = Player_Unload;
+	e->debugRender = Player_DebugRender;
+	e->onWorldCollision = Player_OnWorldHit;
+	e->onCollision = Player_OnCollision;
 	e->transform.position = position;
 	e->tag = ET_PLAYER;
 
 	playerState = PLAYER_STATE_MOVE;
 
-	/*model = RES_LoadModel("assets/models/megaman_gun_test_01.glb");
-	CH_LoadAnimationController(&animController, "assets/models/megaman_gun_test_01.glb");*/
-
-	model = RES_LoadModel("assets/models/Beautiful_Body_01.glb");
-	CH_LoadAnimationController(&animController, "assets/models/Beautiful_Body_01.glb");
-
 	//Set animation settings
 	CH_SetClipLoopIndex(&animController, ANIM_IDLE, 1);
 	CH_SetClipLoopIndex(&animController, ANIM_RUN, 1);
 	CH_SetClipLoopIndex(&animController, ANIM_AIM, 1);
-
-	jumpForce = sqrtf(2 * GRAVITY * jumpHeight);
-	printf("jump force: %f\n", jumpForce);
-
-	shadow = LoadModelFromMesh(GenMeshPlane(2, 2, 1, 1));
-	shadowTexture = LoadTexture("assets/textures/shadow_02.png");
-	shadow.materials[0].maps[MATERIAL_MAP_ALBEDO].texture = shadowTexture;
 
 	//Collisions
 	e->mass = 1;
@@ -94,21 +111,9 @@ void NewPlayer(Entity* e, Vector3 position)
 	e->collider.offset = (Vector3){ 0,0.8,0 };
 	e->collider.radius = 0.9f;
 
-	handBone = CH_GetBoneId(model, "hand.r");
-
-	if (handBone > -1)
-		printf("Found hand bone.\n");
-	else
-		printf("Could not find hand bone.\n");
-
-	//Sounds
-	gunSilencer = RES_LoadSound("assets/sounds/gun_silencer.wav");
-	gunEmpty = RES_LoadSound("assets/sounds/gun_empty.wav");
-	gunCock = RES_LoadSound("assets/sounds/gun_hammer.wav");
-
 }
 
-static void UpdatePlayer(Entity* p, float dt)
+static void Player_Update(Entity* p, float dt)
 {
 	int gamepad = 0;
 
@@ -254,7 +259,7 @@ static void UpdatePlayerAim(Entity* p, float dt)
 
 }
 
-static void RenderPlayer(Entity* p)
+static void Player_Render(Entity* p)
 {
 	//draw shadow
 	Vector3 shadowPos = p->groundPos;
@@ -274,7 +279,7 @@ static void RenderPlayer(Entity* p)
 	DrawCube(handPos, 0.3, 0.3, 0.3, GREEN);*/
 }
 
-static void DebugRenderPlayer(Entity* p)
+static void Player_DebugRender(Entity* p)
 {
 	Model* m = RES_GetModel(model);
 	
@@ -296,18 +301,18 @@ static void DebugRenderPlayer(Entity* p)
 	DrawSphereWires((Vector3) { p->transform.position.x, p->groundPos.y + jumpHeight, p->transform.position.z }, 0.2, 4, 4, RED);
 }
 
-static void UnloadPlayer(Entity* p)
+static void Player_Unload(Entity* p)
 {
 	printf("Unloading Player\n");
-	CH_UnloadAnimationController(&animController);
+	
 }
 
-static void PlayerOnWorldHit(Entity* p, RayCollision groundHit)
+static void Player_OnWorldHit(Entity* p, RayCollision groundHit)
 {
 
 }
 
-static void PlayerOnCollision(Entity* p, Entity* other)
+static void Player_OnCollision(Entity* p, Entity* other)
 {
 	if (playerState == PLAYER_STATE_DEAD)
 		return;

@@ -3,6 +3,7 @@
 
 #include "entity.h"
 
-void NPC_New(Entity* e);
+void NPC_CommonInit(void);
+void NPC_New(Entity* e, Vector3 pos, float rot);
 
 #endif

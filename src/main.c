@@ -10,6 +10,8 @@
 #include "titleState.h"
 
 #include "gui/msgBox.h"
+#include "entity/player.h"
+#include "entity/npc.h"
 
 static void InitRayLib(void);
 static void Unload(void);
@@ -120,6 +122,8 @@ static void InitGame(void)
     gGame.nextLevel = LEVEL_NULL;
     gGame.nextSpawn[0] = '\0';
     PlayerStats_Init();
+    Player_Common_Init();
+    NPC_CommonInit();
 
     PushGameState(GetPlayState());
 }
@@ -129,6 +133,7 @@ static void Unload(void)
     if (gGame.stateStack[gGame.stateStackTop - 1].unload)
         gGame.stateStack[gGame.stateStackTop - 1].unload();
 
+    Player_Common_Unload();
     RES_Unload();
     UnloadRenderTexture(target);
 }

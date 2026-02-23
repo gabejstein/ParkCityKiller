@@ -312,9 +312,14 @@ static void UpdatePlayerCamera(float dt)
 		cam->targetPos = Vector3Add(playerTarget, behindPlayer);
 	}	
 
-	cam->camera->target = Vector3Add(player->transform.position, lookOffset);
-
-	float smooth = MIN(1, 8.0 * dt);
+	//cam->camera->target = Vector3Add(player->transform.position, lookOffset);
+	float smooth = MIN(1, 9.0 * dt);
+	//If I dont smooth the target too then the camera follows the player too tightly.
+	//If the player jitters too much, the camera jitters too much.
+	Vector3 newTarget = Vector3Add(player->transform.position, lookOffset);
+	cam->camera->target = Vector3Lerp(cam->camera->target, newTarget, smooth);
+	
+	smooth = MIN(1, 8.0 * dt);
 	cam->camera->position = Vector3Lerp(cam->camera->position, cam->targetPos, smooth);
 }
 

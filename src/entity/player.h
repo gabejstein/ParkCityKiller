@@ -13,6 +13,8 @@ typedef enum
 
 PLAYER_STATE GetPlayerState(void);
 
-void NewPlayer(Entity* e, Vector3 position);
+void Player_Common_Init(void);
+void Player_Common_Unload(void);
+void Player_New(Entity* e, Vector3 position);
 
 #endif
