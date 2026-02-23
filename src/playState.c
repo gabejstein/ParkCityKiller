@@ -140,6 +140,11 @@ static void PlayState_Unload(void)
 
 static void PlayState_Update(float dt)
 {
+	if (gGame.fader.alpha > 0)
+	{
+		gGame.fader.alpha -= dt;
+		if (gGame.fader.alpha < 0)gGame.fader.alpha = 0;
+	}
 	Level_Update(gGame.curLevel, dt);
 	UpdateCamera(&camera, CAMERA_PERSPECTIVE);
 	Vector3 cameraDir = Vector3Subtract(camera.position, camera.target);

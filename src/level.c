@@ -23,9 +23,9 @@ static void LoadOverworld(Level* level)
 
 	level->portals[0] = (LevelPortal){
 		.levelId = LEVEL_HOTEL,
-		.position = (Vector3){10,0,10},
+		.position = (Vector3){42.8f,5.0f,-46.89f},
 		.size = (Vector3){5,5,5},
-		.spawnId = "counter"
+		.spawnId = "lobby"
 	};
 
 	level->portals[0].box = (BoundingBox)
@@ -144,7 +144,7 @@ void Level_Unload(Level* level)
 		level->unload(level);
 
 	if (level->portalCount)
-	{
+	{		
 		free(level->portals);
 	}
 		
@@ -174,7 +174,11 @@ void Level_DebugRender(Level* level)
 
 	//TODO: Draw overlay of id as well
 	for (int i = 0; i < level->portalCount; i++)
+	{
 		DrawBoundingBox(level->portals[i].box, BLUE);
+		DrawSphereWires(level->portals[i].position, 0.4, 4, 4, PURPLE);
+	}
+		
 
 	//TODO: Draw overlay of id as well
 	for (int i = 0; i < level->spawnPointCount; i++)

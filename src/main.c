@@ -46,7 +46,10 @@ int main(int argc, char** argv)
         deltaTime = MIN(deltaTime, SECS_PER_FRAME);
 
         if (CheckNextLevel())
+        {
             continue;
+        }
+            
 
         //Update Logic Here
      
@@ -114,6 +117,8 @@ static void InitGame(void)
     gGame.stateStackTop = 0;
     gGame.bDebugMode = 0;
     gGame.curLevel = Level_GetLevel(LEVEL_OVERWORLD);
+    gGame.nextLevel = LEVEL_NULL;
+    gGame.nextSpawn[0] = '\0';
     PlayerStats_Init();
 
     PushGameState(GetPlayState());
@@ -167,6 +172,12 @@ static int CheckNextLevel(void)
 {
     if (gGame.nextLevel < 0)
         return 0;
+
+    gGame.fader.alpha += 0.05f;
+    if (gGame.fader.alpha < 1)
+        return 0;
+    else
+        gGame.fader.alpha = 1;
 
     Level_Unload(gGame.curLevel);
 

@@ -139,6 +139,7 @@
     <ClInclude Include="src\entity\enemy.h" />
     <ClInclude Include="src\const.h" />
     <ClInclude Include="src\entity\entity.h" />
+    <ClInclude Include="src\entity\npc.h" />
     <ClInclude Include="src\gameWorld.h" />
     <ClInclude Include="src\gui\selectionList.h" />
     <ClInclude Include="src\level.h" />
@@ -158,6 +159,7 @@
     <ClInclude Include="src\titleState.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\entity\npc.c" />
     <ClCompile Include="src\system\skybox.c" />
     <ClCompile Include="src\pauseMenuState.c" />
     <ClCompile Include="src\gui\selectionList.c" />
