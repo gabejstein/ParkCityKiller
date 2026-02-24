@@ -16,6 +16,7 @@
 #include "spawnZone.h"
 #include "gui/selectionList.h"
 #include "gui/msgBox.h"
+#include "gui/dialogueBox.h"
 #include "pauseMenuState.h"
 
 #include "const.h"
@@ -151,6 +152,10 @@ static void PlayState_Update(float dt)
 	RES_UpdateShader(&camera.position, &cameraDir);
 	UpdateParticleSystem(dt);
 	UpdateMsgBox(dt);
+
+	if (!DialogueBox_IsDone())
+		DialogueBox_Update(dt);
+
 	UpdateEntities(dt);
 
 	if (GetPlayerState() == PLAYER_STATE_DEAD)
@@ -165,6 +170,9 @@ static void PlayState_Update(float dt)
 
 	if (IsKeyPressed(KEY_M))
 		PushMsgBox("This is a message");
+
+	if (IsKeyPressed(KEY_C))
+		DialogueBox_AddText("Good to see that this works!");
 
 	if (IsKeyPressed(KEY_J))
 		Level_SetNext(LEVEL_HOTEL, NULL);
@@ -221,6 +229,8 @@ static void PlayState_Render(void)
 
 	DrawHud();
 	DrawMsgBox();
+	if (!DialogueBox_IsDone())
+		DialogueBox_Render();
 
 	if (GetPlayerState() == PLAYER_STATE_AIM)
 		RES_DrawTexture(crossHair, VIRTUAL_WINDOW_W * 0.5 - crossHair->width * 0.5, VIRTUAL_WINDOW_H * 0.5 - crossHair->height);

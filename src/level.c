@@ -21,6 +21,9 @@ static void LoadOverworld(Level* level)
 	Entity* npc1 = NewEntity();
 	NPC_New(npc1, (Vector3) { -0.98f, 0.1f, 22.8f }, 0);
 
+	Entity* npc2 = NewEntity();
+	NPC_New(npc2, (Vector3) { 18.13f, 0.1f, 6.38f }, -90);
+
 	level->portalCount = 1;
 	level->portals = (LevelPortal*) malloc(sizeof(LevelPortal) * level->portalCount);
 	memset(level->portals, 0, sizeof(LevelPortal)* level->portalCount);

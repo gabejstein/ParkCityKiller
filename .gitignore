@@ -2,7 +2,8 @@
 
 working_files/
 x64/
-assets/
+assets/models/ignore/
+assets/fonts/
 
 #Ignore common Visual Studio and build artifacts
 

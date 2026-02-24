@@ -10,6 +10,7 @@
 #include "titleState.h"
 
 #include "gui/msgBox.h"
+#include "gui/dialogueBox.h"
 #include "entity/player.h"
 #include "entity/npc.h"
 
@@ -29,6 +30,7 @@ int main(int argc, char** argv)
 {
     InitRayLib();
     InitMsgBox();
+    DialogueBox_Init();
     InitGame();
 
     float deltaTime = 0.0f;
@@ -134,6 +136,7 @@ static void Unload(void)
         gGame.stateStack[gGame.stateStackTop - 1].unload();
 
     Player_Common_Unload();
+    DialogueBox_Unload();
     RES_Unload();
     UnloadRenderTexture(target);
 }

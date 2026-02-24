@@ -81,6 +81,12 @@
     <ClInclude Include="src\entity\npc.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\script\script.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\gui\dialogueBox.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.c">
@@ -138,6 +144,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\entity\npc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\script\script.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gui\dialogueBox.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
