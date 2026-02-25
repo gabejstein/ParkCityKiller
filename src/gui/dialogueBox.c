@@ -2,25 +2,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <raylib.h>
 #include "../game.h"
 #include "../const.h"
 
-#define MAX_LINE 100
-#define MAX_CHAR 60
 #define MAX_DISPLAY_LINES 4
 
-typedef struct
-{
-    char textQueue[MAX_LINE][MAX_CHAR];
-    int curLine;
-    int rearLine;
-    Rectangle rec;
-    float timer;
-    unsigned int index;
-    bool bFinished;
-    int choice;
-}DialogueBox;
+#define CCODE_BLUE_TEXT "<color blue>"
+#define CCODE_RED_TEXT "<color red>"
+#define CCODE_WHITE_TEXT "<color white>"
+#define CCODE_PLAY_SOUND "<playsfx>"
+#define CCODE_END_PAGE "<eop>"
+#define CCODE_PLAYER_NAME "<player>"
 
 //global variables
 static DialogueBox gDialogueBox;
@@ -44,8 +36,9 @@ void DialogueBox_Init(void)
         .x = VIRTUAL_WINDOW_W * 0.5 - defaultBoxWidth * 0.5,
         .y = VIRTUAL_WINDOW_H - defaultBoxHeight - 10,
         .width = defaultBoxWidth,
-        .height = defaultBoxHeight
-        }
+        .height = defaultBoxHeight+5
+        },
+    .textColor = BLACK,
     };
 
     font = LoadFontEx("assets/fonts/ignore/PressStart2P-Regular.ttf", 8, 0, 128);
@@ -57,36 +50,55 @@ void DialogueBox_Init(void)
 void DialogueBox_Render(void)
 {
     float padding = 10;
-    char displayText[MAX_CHAR];
-    char* text = NULL;
 
     //draw backing
     DrawTextureNPatch(nPatchTexture, nPatchInfo, gDialogueBox.rec, (Vector2) { 0, 0 }, 0.0f, WHITE);
 
     //draw text
-    int start = gDialogueBox.curLine;
-    int end = MIN(gDialogueBox.curLine + MAX_DISPLAY_LINES, gDialogueBox.rearLine);
-
     int y = (int)gDialogueBox.rec.y + padding;
-    for (int i = start; i < end; i++)
-    {
-        //just draw the lines for now without typewriter.
 
-        DrawTextEx(font, gDialogueBox.textQueue[i], (Vector2) { (int)gDialogueBox.rec.x + padding, y }, 8, 2, WHITE);
-        y += 8+lineSpacing;
-    }
-   
-    /*text = gDialogueBox.textQueue[gDialogueBox.curLine];
-    strncpy(displayText, text, gDialogueBox.index);
-    displayText[gDialogueBox.index] = '\0';*/
+    DrawTextEx(font, "This is some dummy\ntext. You can read this!\nLine break here.\nAnd line break here.", (Vector2) { (int)gDialogueBox.rec.x + padding, y }, 8, 2, gDialogueBox.textColor);
     
+}
+
+void CompileText(char* text)
+{
+    char* p = text;
+    char* out = gDialogueBox.curDialogue;
+
+    while (*p)
+    {
+        if (*p == '<')
+        {
+            if (strncmp(p, CCODE_BLUE_TEXT, strlen(CCODE_BLUE_TEXT) == 0))
+            {
+                *out++ = 5;
+                p+= strlen(CCODE_BLUE_TEXT);
+            }
+            else
+            {
+                p++;
+            }
+        }
+        else
+        {
+            *out++ = *p++;
+        }
+    }
+}
+
+void DialogueBox_AddTextEx(char* text, DialogueCallback callback, void* data)
+{
+    DialogueBox_Reset();
+    CompileText(text);
+
+    gDialogueBox.endCallback = callback;
+    gDialogueBox.callbackData = data;
 }
 
 void DialogueBox_AddText(char* text)
 {
-    if (gDialogueBox.rearLine >= MAX_LINE)return;
-
-    strcpy(gDialogueBox.textQueue[gDialogueBox.rearLine++], text);
+    DialogueBox_AddTextEx(text, NULL, NULL);
 }
 
 void DialogueBox_Reset(void)
@@ -94,42 +106,16 @@ void DialogueBox_Reset(void)
     gDialogueBox.timer = 0.0f;
     gDialogueBox.index = 0;
     gDialogueBox.bFinished = 0;
+    gDialogueBox.bPageEnd = 0;
     gDialogueBox.curLine = 0;
-    gDialogueBox.rearLine = 0;
+    gDialogueBox.textColor = WHITE;
 }
 
 void DialogueBox_Update(float dt)
 {
-    /*int doneTyping = gDialogueBox.index >= strlen(gDialogueBox.textQueue[gDialogueBox.curLine]);
-
-    if (!doneTyping)
+    if (IsGamepadButtonPressed(0, GAMEPAD_BUTTON_RIGHT_FACE_DOWN))
     {
-        gDialogueBox.timer += dt;
-        if (gDialogueBox.timer > dialogueSpeed)
-        {
-            gDialogueBox.timer = 0;
-            gDialogueBox.index++;
-        }
-
-    }*/
-    
-    if (IsKeyPressed(KEY_SPACE))
-    {
-        /*if (!doneTyping)
-            gDialogueBox.index = strlen(gDialogueBox.textQueue[gDialogueBox.curLine]);
-        else
-        {*/
-            gDialogueBox.curLine+=MAX_DISPLAY_LINES;
-            if(gDialogueBox.curLine >= gDialogueBox.rearLine)
-                gDialogueBox.bFinished = 1;
-            else
-            {
-                gDialogueBox.timer = 0.0f;
-                gDialogueBox.index = 0;
-            }
-        //}
-            
-       
+        gDialogueBox.bFinished = true;
     }
 }
 

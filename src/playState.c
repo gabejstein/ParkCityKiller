@@ -138,7 +138,6 @@ static void PlayState_Unload(void)
 }
 
 
-
 static void PlayState_Update(float dt)
 {
 	if (gGame.fader.alpha > 0)
