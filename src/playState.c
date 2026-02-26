@@ -171,7 +171,11 @@ static void PlayState_Update(float dt)
 		PushMsgBox("This is a message");
 
 	if (IsKeyPressed(KEY_C))
-		DialogueBox_AddText("Good to see that this works!");
+	{
+		char* text = "Hello\x05 Kevin.\x06\nHealthy gone!!!\nYou all over!!!";
+		DialogueBox_AddText(text);
+	}
+		
 
 	if (IsKeyPressed(KEY_J))
 		Level_SetNext(LEVEL_HOTEL, NULL);
