@@ -172,7 +172,7 @@ static void PlayState_Update(float dt)
 
 	if (IsKeyPressed(KEY_C))
 	{
-		char* text = "Hello\x05 Kevin.\x06\nHealthy gone!!!\nYou all over!!!";
+		char* text = "Hello, my name is\x05\x02 John Coxworth\x06.\x05\x01\nYo mama is\x05\x04 spa music\x05\x01!!!\nYou all over!!!";
 		DialogueBox_AddText(text);
 	}
 		

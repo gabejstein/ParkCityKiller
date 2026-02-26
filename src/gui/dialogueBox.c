@@ -5,23 +5,25 @@
 #include "../game.h"
 #include "../const.h"
 
-/*Notes
-    Changing the color or formatting of characters mid-line will require checks for each
-    code-point in the render function. Something like playing a sound is different because it should
-    only be fired once. There should be a boolean flag that check if the sound has already been played or
-    maybe the sound is only played if the code point being parsed is the most current.
-
-    The latter could pose a problem if the text is skipped.
-*/
-
 #define MAX_DISPLAY_LINES 4
+#define CHAR_SPACING 8
+#define LINE_SPACING 10
 
-#define CCODE_BLUE_TEXT "<color blue>"
-#define CCODE_RED_TEXT "<color red>"
-#define CCODE_WHITE_TEXT "<color white>"
-#define CCODE_PLAY_SOUND "<playsfx>"
-#define CCODE_END_PAGE "<eop>"
-#define CCODE_PLAYER_NAME "<player>"
+#define CCODE_END_PAGE 0x04
+#define CCODE_CHANGE_COLOR 0x05
+#define CCODE_PLAY_SOUND 0x06
+#define CCODE_PLAYER_NAME 0x07
+#define CCODE_TEXT_SPEED 0x08
+#define CCODE_ICON 0x09
+
+typedef enum TextColorCode
+{
+    TEXT_COLOR_WHITE = 0x01,
+    TEXT_COLOR_RED = 0x02,
+    TEXT_COLOR_BLUE = 0x03,
+    TEXT_COLOR_YELLOW = 0x04,
+    TEXT_COLOR_PURPLE = 0x05
+}TextColorCode;
 
 //global variables
 static DialogueBox gDialogueBox;
@@ -32,6 +34,10 @@ static int lineSpacing = 4;
 static  Font font;
 static Texture2D nPatchTexture;
 static NPatchInfo nPatchInfo;
+static bool bPlayedSFX = false; //flag to prevent sound from being replayed.
+
+//Delete this later
+SoundHandle sfx;
 
 //static functions
 static void UpdateChoice(float dt);
@@ -54,6 +60,30 @@ void DialogueBox_Init(void)
     nPatchTexture = LoadTexture("assets/textures/gui/panel_04.png");
     //For raylib npatch's: the first param is the area of src texture, 2nd,3rd is the top and right of the middle, and then top,right of bottom-right corner.
     nPatchInfo =(NPatchInfo) { (Rectangle) { 0,0,24,24 },8,8,16,16,NPATCH_NINE_PATCH };
+
+    sfx = RES_LoadSound("assets/sounds/ignore/name.wav");
+}
+
+void ChangeTextColor(TextColorCode colorCode)
+{
+    switch (colorCode)
+    {
+    case TEXT_COLOR_WHITE:
+        gDialogueBox.textColor = WHITE;
+        break;
+    case TEXT_COLOR_RED:
+        gDialogueBox.textColor = RED;
+        break;
+    case TEXT_COLOR_BLUE:
+        gDialogueBox.textColor = BLUE;
+        break;
+    case TEXT_COLOR_YELLOW:
+        gDialogueBox.textColor = YELLOW;
+        break;
+    case TEXT_COLOR_PURPLE:
+        gDialogueBox.textColor = PURPLE;
+        break;
+    }
 }
 
 void DialogueBox_Render(void)
@@ -76,63 +106,58 @@ void DialogueBox_Render(void)
         
         int codepointByteCount = 0;
         int codepoint = GetCodepointNext(&gDialogueBox.curPage[i], &codepointByteCount);
+
         switch (codepoint) {
         case '\n':
             x = (int)gDialogueBox.rec.x + padding;
-            y += 10;
+            y += LINE_SPACING;
             break;
         case '\0':
-            gDialogueBox.bFinished = true;
+            gDialogueBox.bPageEnd = true;
             break;
-        case 0x05:
-            gDialogueBox.textColor = RED;
-
+        case CCODE_CHANGE_COLOR:
+            codepoint = GetCodepointNext(&gDialogueBox.curPage[++i], &codepointByteCount);
+            ChangeTextColor(codepoint);
             break;
-        case 0x06:
-            gDialogueBox.textColor = WHITE;
+        case CCODE_PLAY_SOUND:
+            if (!bPlayedSFX)
+            {
+                //TODO: Allow for different sounds to played.
+                RES_PlaySound(sfx);
+                bPlayedSFX = true;
+            }
+            break;
+        case CCODE_END_PAGE:
 
             break;
         default:
             DrawTextCodepoint(font, codepoint, (Vector2) { x, y }, font.baseSize, gDialogueBox.textColor);
-            x += 8;
+            x += CHAR_SPACING;
         }
         
     }
 
-    //DrawTextEx(font, "This is some dummy\ntext. You can read this!\nLine break here.\nAnd line break here.", (Vector2) { (int)gDialogueBox.rec.x + padding, y }, 8, 2, gDialogueBox.textColor);
-    
-}
-
-void CompileText(char* text)
-{
-    char* p = text;
-    char* out = gDialogueBox.dialogueText;
-
-    while (*p)
+    //Draw 'more text' charet
+    if (gDialogueBox.bPageEnd)
     {
-        if (*p == '<')
+        if (!gDialogueBox.bFinished)
         {
-            if (strncmp(p, CCODE_BLUE_TEXT, strlen(CCODE_BLUE_TEXT) == 0))
-            {
-                *out++ = 5;
-                p+= strlen(CCODE_BLUE_TEXT);
-            }
-            else
-            {
-                p++;
-            }
-        }
-        else
-        {
-            *out++ = *p++;
+            int recX = gDialogueBox.rec.x + gDialogueBox.rec.width - 10;
+            int recY = gDialogueBox.rec.y + gDialogueBox.rec.height - 10;
+            DrawRectangle(recX, recY, 8, 8, WHITE);
         }
     }
+    
 }
 
 void DialogueBox_AddTextEx(char* text, DialogueCallback callback, void* data)
 {
     DialogueBox_Reset();
-    CompileText(text);
+    bPlayedSFX = false;
+    
+    char* p = text;
+    char* out = gDialogueBox.dialogueText;
+    while ((*out++ = *p++));
 
     gDialogueBox.curPage = gDialogueBox.dialogueText;
     gDialogueBox.textPos = 0;
@@ -156,9 +181,8 @@ void DialogueBox_Reset(void)
 
 void DialogueBox_Update(float dt)
 {
-
     gDialogueBox.timer += dt;
-    if (!gDialogueBox.bFinished && gDialogueBox.timer > 0.2f)
+    if (!gDialogueBox.bPageEnd && gDialogueBox.timer > 0.1f)
     {
         gDialogueBox.timer = 0;
         gDialogueBox.textPos++;
@@ -185,4 +209,30 @@ static void UpdateChoice(float dt)
 {
 
 }
+
+//void CompileText(char* text)
+//{
+//    char* p = text;
+//    char* out = gDialogueBox.dialogueText;
+//
+//    while (*p)
+//    {
+//        if (*p == '<')
+//        {
+//            if (strncmp(p, CCODE_BLUE_TEXT, strlen(CCODE_BLUE_TEXT) == 0))
+//            {
+//                *out++ = 5;
+//                p += strlen(CCODE_BLUE_TEXT);
+//            }
+//            else
+//            {
+//                p++;
+//            }
+//        }
+//        else
+//        {
+//            *out++ = *p++;
+//        }
+//    }
+//}
 
