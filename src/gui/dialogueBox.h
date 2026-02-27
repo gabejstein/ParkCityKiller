@@ -10,7 +10,7 @@
 typedef enum DialogueBoxState
 {
     DBOX_STATE_TYPING,
-    DBOX_STATE_WAIT_INPUT,
+    DBOX_STATE_WAIT_NEXT,
     DBOX_STATE_END
 }DialogueBoxState;
 
@@ -19,7 +19,7 @@ typedef void(*DialogueCallback)(void* data);
 typedef struct
 {
     char dialogueText[MAX_DIALOGUE];
-    char renderText[MAX_DIALOGUE];
+    char renderText[MAX_DIALOGUE]; //may be used to expand text symbols.
     int textPos;
     char* curPage;
     int nChoices; //How many choices to allow a user to select.
@@ -30,7 +30,6 @@ typedef struct
     DialogueBoxState state;
 
     uint16_t bFinished : 1;
-    uint16_t bPageEnd : 1;
     uint16_t bImmediate : 1; //Determines whether or not to draw all characters instantly.
     uint16_t bIgnoreInput : 1; //Ignores input. Used in cutscenes.
 

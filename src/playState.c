@@ -137,7 +137,6 @@ static void PlayState_Unload(void)
 	UnloadParticleSystem();
 }
 
-
 static void PlayState_Update(float dt)
 {
 	if (gGame.fader.alpha > 0)

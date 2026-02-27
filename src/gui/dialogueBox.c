@@ -52,6 +52,7 @@ SoundHandle sfx;
 
 //static functions
 static void UpdateChoice(float dt);
+static void DialogueBox_RenderText(void);
 
 void DialogueBox_Init(void)
 {
@@ -126,39 +127,64 @@ static void ChangeTextSpeed(TextSpeed code)
 
 void DialogueBox_Render(void)
 {
+    DialogueBox* dBox = &gDialogueBox; //thought I'd future-proof this code a bit in case there are multiple boxes.
+
     //TODO delete later:
-    if (!*gDialogueBox.dialogueText)return;
+    if (!*dBox->dialogueText)return;
+
+    //draw backing
+    DrawTextureNPatch(nPatchTexture, nPatchInfo, dBox->rec, (Vector2) { 0, 0 }, 0.0f, WHITE);
+
+    DialogueBox_RenderText();
+
+    //Draw 'more text' charet
+    if (dBox->state == DBOX_STATE_WAIT_NEXT)
+    {
+        int recX = dBox->rec.x + dBox->rec.width - 14;
+        int recY = dBox->rec.y + dBox->rec.height - 14;
+        DrawRectangle(recX, recY, 8, 8, WHITE);
+    }
+    else if (dBox->state == DBOX_STATE_END)
+    {
+        int recX = dBox->rec.x + dBox->rec.width - 14;
+        int recY = dBox->rec.y + dBox->rec.height - 14;
+        DrawRectangle(recX, recY, 8, 8, DARKGREEN);
+    }
+}
+
+static void DialogueBox_RenderText(void)
+{
+    DialogueBox* dBox = &gDialogueBox; //thought I'd future-proof this code a bit in case there are multiple boxes.
+    //TODO delete later:
+    if (!*dBox->dialogueText)return;
 
     float padding = 10;
     int i;
-    int x = (int)gDialogueBox.rec.x + padding;
-    int y = (int)gDialogueBox.rec.y + padding;
-
-    //draw backing
-    DrawTextureNPatch(nPatchTexture, nPatchInfo, gDialogueBox.rec, (Vector2) { 0, 0 }, 0.0f, WHITE);
+    int x = (int)dBox->rec.x + padding;
+    int y = (int)dBox->rec.y + padding;
+    int xOffset = 0, yOffset = 0;
 
     //draw text
-    gDialogueBox.textColor = WHITE;
-    for (i = 0; i < gDialogueBox.textPos; i++)
+    dBox->textColor = WHITE;
+    for (i = 0; i < dBox->textPos; i++)
     {
         
         int codepointByteCount = 0;
-        int codepoint = GetCodepointNext(&gDialogueBox.curPage[i], &codepointByteCount);
+        int codepoint = GetCodepointNext(&dBox->curPage[i], &codepointByteCount);
 
         switch (codepoint) {
         case '\n':
-            x = (int)gDialogueBox.rec.x + padding;
-            y += LINE_SPACING;
+            xOffset = 0;
+            yOffset += LINE_SPACING;
             break;
         case '\0':
-            gDialogueBox.bPageEnd = true;
-            gDialogueBox.state = DBOX_STATE_END;
+            dBox->state = DBOX_STATE_END;
             break;
         case ' ':
-            x += CHAR_SPACING;
+            xOffset += CHAR_SPACING;
             break;
         case CCODE_CHANGE_COLOR:
-            codepoint = GetCodepointNext(&gDialogueBox.curPage[++i], &codepointByteCount);
+            codepoint = GetCodepointNext(&dBox->curPage[++i], &codepointByteCount);
             ChangeTextColor(codepoint);
             break;
         case CCODE_PLAY_SOUND:
@@ -170,20 +196,22 @@ void DialogueBox_Render(void)
             }
             break;
         case CCODE_TEXT_SPEED:
-            codepoint = GetCodepointNext(&gDialogueBox.curPage[++i], &codepointByteCount);
+            codepoint = GetCodepointNext(&dBox->curPage[++i], &codepointByteCount);
             ChangeTextSpeed(codepoint);
             break;
         case CCODE_END_PAGE:
-          
-            gDialogueBox.bPageEnd = true;
-            break;
+            if (dBox->state == DBOX_STATE_TYPING)
+            {
+                dBox->state = DBOX_STATE_WAIT_NEXT;
+            }
+            return;
         default:
-            DrawTextCodepoint(font, codepoint, (Vector2) { x, y }, font.baseSize, gDialogueBox.textColor);
-            x += CHAR_SPACING;
+            DrawTextCodepoint(font, codepoint, (Vector2) { x+xOffset, y+yOffset }, font.baseSize, dBox->textColor);
+            xOffset += CHAR_SPACING;
 
             //the typing sound should only be played for the last character typed,
             //otherwise, it will just keep playing each frame.
-            if(!gDialogueBox.bPageEnd && i==gDialogueBox.textPos-1 && gDialogueBox.timer == gDialogueBox.textDelay)
+            if(!dBox->state==DBOX_STATE_TYPING && i==dBox->textPos-1 && dBox->timer == dBox->textDelay)
                 RES_PlaySound(typingSFX);
 
             break;
@@ -191,26 +219,16 @@ void DialogueBox_Render(void)
         
     }
 
-    if (!gDialogueBox.bPageEnd && gDialogueBox.timer == 0)
+    if (dBox->timer == 0)
     {
-        gDialogueBox.timer = gDialogueBox.textDelay;
-        gDialogueBox.textPos = i+1;
+        dBox->timer = dBox->textDelay;
+        dBox->textPos = i+1;
     }
     else
     {
-        gDialogueBox.timer--;
+        dBox->timer--;
     }
-
-    //Draw 'more text' charet
-    if (gDialogueBox.bPageEnd)
-    {
-        if (!gDialogueBox.bFinished)
-        {
-            int recX = gDialogueBox.rec.x + gDialogueBox.rec.width - 14;
-            int recY = gDialogueBox.rec.y + gDialogueBox.rec.height - 14;
-            DrawRectangle(recX, recY, 8, 8, WHITE);
-        }
-    }
+    
     
 }
 
@@ -228,6 +246,8 @@ void DialogueBox_AddTextEx(char* text, DialogueCallback callback, void* data)
 
     gDialogueBox.endCallback = callback;
     gDialogueBox.callbackData = data;
+
+    gDialogueBox.state = DBOX_STATE_TYPING;
 }
 
 void DialogueBox_AddText(char* text)
@@ -237,30 +257,30 @@ void DialogueBox_AddText(char* text)
 
 void DialogueBox_Reset(void)
 {
-    gDialogueBox.timer = 0.0f;
+    gDialogueBox.timer = 0;
     gDialogueBox.bFinished = 0;
-    gDialogueBox.bPageEnd = 0;
-    gDialogueBox.textColor = WHITE;
 }
 
 void DialogueBox_Update(float dt)
 {
     
-    if (gDialogueBox.bPageEnd)
+    if (gDialogueBox.state==DBOX_STATE_WAIT_NEXT)
     {
-        if (gDialogueBox.state == DBOX_STATE_END)
-        {
-            if (IsGamepadButtonPressed(0, GAMEPAD_BUTTON_RIGHT_FACE_RIGHT))
-            {
-                gDialogueBox.bFinished = true;
-            }
-        }
-        else if (IsGamepadButtonPressed(0, GAMEPAD_BUTTON_RIGHT_FACE_RIGHT))
+        if (IsGamepadButtonPressed(0, GAMEPAD_BUTTON_RIGHT_FACE_RIGHT))
         {
             gDialogueBox.curPage += gDialogueBox.textPos;
             gDialogueBox.textPos = 0;
-            gDialogueBox.bPageEnd = false;
             gDialogueBox.timer = gDialogueBox.textDelay;
+            gDialogueBox.state = DBOX_STATE_TYPING;
+        }
+    }
+    else if (gDialogueBox.state == DBOX_STATE_END)
+    {
+        if (IsGamepadButtonPressed(0, GAMEPAD_BUTTON_RIGHT_FACE_RIGHT))
+        {
+            gDialogueBox.bFinished = true;
+            if (gDialogueBox.endCallback)
+                gDialogueBox.endCallback(gDialogueBox.callbackData);
         }
     }
     
