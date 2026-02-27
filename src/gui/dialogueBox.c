@@ -7,7 +7,8 @@
 
 #define MAX_DISPLAY_LINES 4
 #define CHAR_SPACING 8
-#define LINE_SPACING 10
+#define LINE_SPACING 12
+#define DEFAULT_TEXT_SPEED 0.08f
 
 #define CCODE_END_PAGE 0x04
 #define CCODE_CHANGE_COLOR 0x05
@@ -36,6 +37,7 @@ static Texture2D nPatchTexture;
 static NPatchInfo nPatchInfo;
 static bool bPlayedSFX = false; //flag to prevent sound from being replayed.
 
+SoundHandle typingSFX;
 //Delete this later
 SoundHandle sfx;
 
@@ -51,9 +53,10 @@ void DialogueBox_Init(void)
         .x = VIRTUAL_WINDOW_W * 0.5 - defaultBoxWidth * 0.5,
         .y = VIRTUAL_WINDOW_H - defaultBoxHeight - 10,
         .width = defaultBoxWidth,
-        .height = defaultBoxHeight+5
+        .height = defaultBoxHeight + 5
         },
     .textColor = BLACK,
+    .textSpeed = DEFAULT_TEXT_SPEED
     };
 
     font = LoadFontEx("assets/fonts/ignore/PressStart2P-Regular.ttf", 8, 0, 128);
@@ -62,6 +65,7 @@ void DialogueBox_Init(void)
     nPatchInfo =(NPatchInfo) { (Rectangle) { 0,0,24,24 },8,8,16,16,NPATCH_NINE_PATCH };
 
     sfx = RES_LoadSound("assets/sounds/ignore/name.wav");
+    typingSFX = RES_LoadSound("assets/sounds/select_007.ogg");
 }
 
 void ChangeTextColor(TextColorCode colorCode)
@@ -128,11 +132,17 @@ void DialogueBox_Render(void)
             }
             break;
         case CCODE_END_PAGE:
-
+          
+            gDialogueBox.bPageEnd = true;
             break;
         default:
             DrawTextCodepoint(font, codepoint, (Vector2) { x, y }, font.baseSize, gDialogueBox.textColor);
             x += CHAR_SPACING;
+
+            //the typing sound should only be played for the last character typed,
+            //otherwise, it will just keep playing each frame.
+            if(!gDialogueBox.bPageEnd && i==gDialogueBox.textPos-1)
+                RES_PlaySound(typingSFX);
         }
         
     }
@@ -142,8 +152,8 @@ void DialogueBox_Render(void)
     {
         if (!gDialogueBox.bFinished)
         {
-            int recX = gDialogueBox.rec.x + gDialogueBox.rec.width - 10;
-            int recY = gDialogueBox.rec.y + gDialogueBox.rec.height - 10;
+            int recX = gDialogueBox.rec.x + gDialogueBox.rec.width - 14;
+            int recY = gDialogueBox.rec.y + gDialogueBox.rec.height - 14;
             DrawRectangle(recX, recY, 8, 8, WHITE);
         }
     }
@@ -181,17 +191,24 @@ void DialogueBox_Reset(void)
 
 void DialogueBox_Update(float dt)
 {
+    //One problem with this is that there will be a delay for the command codes too even if there's no text.
     gDialogueBox.timer += dt;
-    if (!gDialogueBox.bPageEnd && gDialogueBox.timer > 0.1f)
+    if (!gDialogueBox.bPageEnd && gDialogueBox.timer > gDialogueBox.textSpeed)
     {
         gDialogueBox.timer = 0;
         gDialogueBox.textPos++;
     }
 
-    if (IsGamepadButtonPressed(0, GAMEPAD_BUTTON_RIGHT_FACE_DOWN))
+    if (gDialogueBox.bPageEnd)
     {
-        gDialogueBox.bFinished = true;
+        if (IsGamepadButtonPressed(0, GAMEPAD_BUTTON_RIGHT_FACE_DOWN))
+        {
+            gDialogueBox.curPage += gDialogueBox.textPos;
+            gDialogueBox.textPos = 0;
+            gDialogueBox.bPageEnd = false;
+        }
     }
+    
 }
 
 void DialogueBox_Unload(void)
