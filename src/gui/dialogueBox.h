@@ -10,7 +10,8 @@
 typedef enum DialogueBoxState
 {
     DBOX_STATE_TYPING,
-    DBOX_STATE_WAIT_INPUT
+    DBOX_STATE_WAIT_INPUT,
+    DBOX_STATE_END
 }DialogueBoxState;
 
 typedef void(*DialogueCallback)(void* data);
@@ -23,8 +24,8 @@ typedef struct
     char* curPage;
     int nChoices; //How many choices to allow a user to select.
     Rectangle rec;
-    float timer;
-    float textSpeed;
+    int timer;
+    int textDelay;
     Color textColor;
     DialogueBoxState state;
 

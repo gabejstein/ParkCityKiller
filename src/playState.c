@@ -172,12 +172,12 @@ static void PlayState_Update(float dt)
 
 	if (IsKeyPressed(KEY_C))
 	{
-		char* text = "Hello, my name is\x05\x02 John Coxworth\x06.\x05\x01\n"
-			"Yo mama is\x05\x04 spa music\x05\x01!!!\x04"
-			"You all over!!!";
+		char* text = "Hello, my name is\x05\x06 Rick Atlanta\x06\x05\x01\x08\x01.\n"
+			"\x08\x02Yo mama is\x08\x01\x05\x04 spa music\x05\x01\x08\x02!!!\x04"
+			"The president has been\nkidnapped by ninjas.\x04"
+			"Are you a bad enough dude to\nrescue him?";
 		DialogueBox_AddText(text);
 	}
-		
 
 	if (IsKeyPressed(KEY_J))
 		Level_SetNext(LEVEL_HOTEL, NULL);

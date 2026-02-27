@@ -8,7 +8,7 @@
 #define MAX_DISPLAY_LINES 4
 #define CHAR_SPACING 8
 #define LINE_SPACING 12
-#define DEFAULT_TEXT_SPEED 0.08f
+#define DEFAULT_TEXT_DELAY 3
 
 #define CCODE_END_PAGE 0x04
 #define CCODE_CHANGE_COLOR 0x05
@@ -23,12 +23,21 @@ typedef enum TextColorCode
     TEXT_COLOR_RED = 0x02,
     TEXT_COLOR_BLUE = 0x03,
     TEXT_COLOR_YELLOW = 0x04,
-    TEXT_COLOR_PURPLE = 0x05
+    TEXT_COLOR_PURPLE = 0x05,
+    TEXT_COLOR_GREEN = 0x06,
+    TEXT_COLOR_BLACK = 0x07
 }TextColorCode;
+
+typedef enum TextSpeed
+{
+    TEXT_SPEED_SLOW = 0x01,
+    TEXT_SPEED_NORMAL = 0x02,
+    TEXT_SPEED_FAST = 0x03,
+    TEXT_SPEED_SUPER_SLOW = 0x04,
+}TextSpeed;
 
 //global variables
 static DialogueBox gDialogueBox;
-static float dialogueSpeed = 0.1f; //TODO: Move to a settings struct.
 static const int defaultBoxWidth = VIRTUAL_WINDOW_W*0.9;
 static const int defaultBoxHeight = VIRTUAL_WINDOW_H*0.3;
 static int lineSpacing = 4;
@@ -56,7 +65,7 @@ void DialogueBox_Init(void)
         .height = defaultBoxHeight + 5
         },
     .textColor = BLACK,
-    .textSpeed = DEFAULT_TEXT_SPEED
+    .textDelay = DEFAULT_TEXT_DELAY
     };
 
     font = LoadFontEx("assets/fonts/ignore/PressStart2P-Regular.ttf", 8, 0, 128);
@@ -68,7 +77,7 @@ void DialogueBox_Init(void)
     typingSFX = RES_LoadSound("assets/sounds/select_007.ogg");
 }
 
-void ChangeTextColor(TextColorCode colorCode)
+static void ChangeTextColor(TextColorCode colorCode)
 {
     switch (colorCode)
     {
@@ -87,6 +96,31 @@ void ChangeTextColor(TextColorCode colorCode)
     case TEXT_COLOR_PURPLE:
         gDialogueBox.textColor = PURPLE;
         break;
+    case TEXT_COLOR_GREEN:
+        gDialogueBox.textColor = GREEN;
+        break;
+    case TEXT_COLOR_BLACK:
+        gDialogueBox.textColor = BLACK;
+        break;
+    }
+}
+
+static void ChangeTextSpeed(TextSpeed code)
+{
+    switch (code)
+    {
+    case TEXT_SPEED_SLOW:
+        gDialogueBox.textDelay = 8;
+        break;
+    case TEXT_SPEED_NORMAL:
+        gDialogueBox.textDelay = DEFAULT_TEXT_DELAY;
+        break;
+    case TEXT_SPEED_FAST:
+        gDialogueBox.textDelay = 1;
+        break;
+    case TEXT_SPEED_SUPER_SLOW:
+        gDialogueBox.textDelay = 15;
+        break;
     }
 }
 
@@ -96,16 +130,16 @@ void DialogueBox_Render(void)
     if (!*gDialogueBox.dialogueText)return;
 
     float padding = 10;
+    int i;
+    int x = (int)gDialogueBox.rec.x + padding;
+    int y = (int)gDialogueBox.rec.y + padding;
 
     //draw backing
     DrawTextureNPatch(nPatchTexture, nPatchInfo, gDialogueBox.rec, (Vector2) { 0, 0 }, 0.0f, WHITE);
 
     //draw text
-    int x = (int)gDialogueBox.rec.x + padding;
-    int y = (int)gDialogueBox.rec.y + padding;
-
     gDialogueBox.textColor = WHITE;
-    for (int i = 0; i < gDialogueBox.textPos; i++)
+    for (i = 0; i < gDialogueBox.textPos; i++)
     {
         
         int codepointByteCount = 0;
@@ -118,6 +152,10 @@ void DialogueBox_Render(void)
             break;
         case '\0':
             gDialogueBox.bPageEnd = true;
+            gDialogueBox.state = DBOX_STATE_END;
+            break;
+        case ' ':
+            x += CHAR_SPACING;
             break;
         case CCODE_CHANGE_COLOR:
             codepoint = GetCodepointNext(&gDialogueBox.curPage[++i], &codepointByteCount);
@@ -131,6 +169,10 @@ void DialogueBox_Render(void)
                 bPlayedSFX = true;
             }
             break;
+        case CCODE_TEXT_SPEED:
+            codepoint = GetCodepointNext(&gDialogueBox.curPage[++i], &codepointByteCount);
+            ChangeTextSpeed(codepoint);
+            break;
         case CCODE_END_PAGE:
           
             gDialogueBox.bPageEnd = true;
@@ -141,10 +183,22 @@ void DialogueBox_Render(void)
 
             //the typing sound should only be played for the last character typed,
             //otherwise, it will just keep playing each frame.
-            if(!gDialogueBox.bPageEnd && i==gDialogueBox.textPos-1)
+            if(!gDialogueBox.bPageEnd && i==gDialogueBox.textPos-1 && gDialogueBox.timer == gDialogueBox.textDelay)
                 RES_PlaySound(typingSFX);
+
+            break;
         }
         
+    }
+
+    if (!gDialogueBox.bPageEnd && gDialogueBox.timer == 0)
+    {
+        gDialogueBox.timer = gDialogueBox.textDelay;
+        gDialogueBox.textPos = i+1;
+    }
+    else
+    {
+        gDialogueBox.timer--;
     }
 
     //Draw 'more text' charet
@@ -191,21 +245,22 @@ void DialogueBox_Reset(void)
 
 void DialogueBox_Update(float dt)
 {
-    //One problem with this is that there will be a delay for the command codes too even if there's no text.
-    gDialogueBox.timer += dt;
-    if (!gDialogueBox.bPageEnd && gDialogueBox.timer > gDialogueBox.textSpeed)
-    {
-        gDialogueBox.timer = 0;
-        gDialogueBox.textPos++;
-    }
-
+    
     if (gDialogueBox.bPageEnd)
     {
-        if (IsGamepadButtonPressed(0, GAMEPAD_BUTTON_RIGHT_FACE_DOWN))
+        if (gDialogueBox.state == DBOX_STATE_END)
+        {
+            if (IsGamepadButtonPressed(0, GAMEPAD_BUTTON_RIGHT_FACE_RIGHT))
+            {
+                gDialogueBox.bFinished = true;
+            }
+        }
+        else if (IsGamepadButtonPressed(0, GAMEPAD_BUTTON_RIGHT_FACE_RIGHT))
         {
             gDialogueBox.curPage += gDialogueBox.textPos;
             gDialogueBox.textPos = 0;
             gDialogueBox.bPageEnd = false;
+            gDialogueBox.timer = gDialogueBox.textDelay;
         }
     }
     
