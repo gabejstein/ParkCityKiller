@@ -19,13 +19,13 @@
 
 typedef enum TextColorCode
 {
-    TEXT_COLOR_WHITE = 0x01,
-    TEXT_COLOR_RED = 0x02,
-    TEXT_COLOR_BLUE = 0x03,
-    TEXT_COLOR_YELLOW = 0x04,
-    TEXT_COLOR_PURPLE = 0x05,
-    TEXT_COLOR_GREEN = 0x06,
-    TEXT_COLOR_BLACK = 0x07
+    TEXT_COLOR_WHITE = 0x41,
+    TEXT_COLOR_RED = 0x42,
+    TEXT_COLOR_BLUE = 0x43,
+    TEXT_COLOR_YELLOW = 0x44,
+    TEXT_COLOR_PURPLE = 0x45,
+    TEXT_COLOR_GREEN = 0x46,
+    TEXT_COLOR_BLACK = 0x47
 }TextColorCode;
 
 typedef enum TextSpeed
@@ -35,6 +35,15 @@ typedef enum TextSpeed
     TEXT_SPEED_FAST = 0x03,
     TEXT_SPEED_SUPER_SLOW = 0x04,
 }TextSpeed;
+
+//TODO: Could move these so other menus can use them.
+#define MAX_ICONS 10
+TextureHandle iconTextures[MAX_ICONS];
+
+//typedef enum IconTextureId
+//{
+//
+//}IconTextureId;
 
 //global variables
 static DialogueBox gDialogueBox;
@@ -261,6 +270,21 @@ void DialogueBox_Reset(void)
     gDialogueBox.bFinished = 0;
 }
 
+void DialogueBox_Skiptext(void)
+{
+    int i = 0;
+    char* p = gDialogueBox.curPage;
+    
+    //WARNING: This will give a false positive if there's a conflicting command code.
+    //Will probably need to change some command codes.
+    while (*p != CCODE_END_PAGE && *p)
+    {
+        i++;
+        p++;  
+    }
+    gDialogueBox.textPos = i-2;
+}
+
 void DialogueBox_Update(float dt)
 {
     
@@ -272,6 +296,7 @@ void DialogueBox_Update(float dt)
             gDialogueBox.textPos = 0;
             gDialogueBox.timer = gDialogueBox.textDelay;
             gDialogueBox.state = DBOX_STATE_TYPING;
+            bPlayedSFX = false;
         }
     }
     else if (gDialogueBox.state == DBOX_STATE_END)
@@ -281,6 +306,13 @@ void DialogueBox_Update(float dt)
             gDialogueBox.bFinished = true;
             if (gDialogueBox.endCallback)
                 gDialogueBox.endCallback(gDialogueBox.callbackData);
+        }
+    }
+    else if (gDialogueBox.state == DBOX_STATE_TYPING)
+    {
+        if (IsGamepadButtonPressed(0, GAMEPAD_BUTTON_RIGHT_FACE_RIGHT))
+        {
+            DialogueBox_Skiptext();
         }
     }
     
@@ -295,6 +327,11 @@ void DialogueBox_Unload(void)
 bool DialogueBox_IsDone(void)
 {
     return gDialogueBox.bFinished;
+}
+
+void DialogueBox_Hide(void)
+{
+    gDialogueBox.bFinished = true;
 }
 
 static void UpdateChoice(float dt)

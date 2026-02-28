@@ -42,6 +42,7 @@ void DialogueBox_Render(void);
 void DialogueBox_Reset(void);
 void DialogueBox_AddTextEx(char* text, DialogueCallback callback, void* data);
 void DialogueBox_AddText(char* text);
+void DialogueBox_Hide(void);
 void DialogueBox_Unload(void);
 void DialogueBox_Update(float dt);
 bool DialogueBox_IsDone(void);
