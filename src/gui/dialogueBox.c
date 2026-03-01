@@ -37,13 +37,14 @@ typedef enum TextSpeed
 }TextSpeed;
 
 //TODO: Could move these so other menus can use them.
-#define MAX_ICONS 10
+#define MAX_ICONS 2
 TextureHandle iconTextures[MAX_ICONS];
 
-//typedef enum IconTextureId
-//{
-//
-//}IconTextureId;
+typedef enum IconTextureId
+{
+    ICON_TEXT_SMILEY = 0x60,
+    ICON_TEXT_HEART = 0x61
+}IconTextureId;
 
 //global variables
 static DialogueBox gDialogueBox;
@@ -75,7 +76,8 @@ void DialogueBox_Init(void)
         .height = defaultBoxHeight + 5
         },
     .textColor = BLACK,
-    .textDelay = DEFAULT_TEXT_DELAY
+    .textDelay = DEFAULT_TEXT_DELAY,
+    .bDontSkip = false
     };
 
     font = LoadFontEx("assets/fonts/ignore/PressStart2P-Regular.ttf", 8, 0, 128);
@@ -83,8 +85,11 @@ void DialogueBox_Init(void)
     //For raylib npatch's: the first param is the area of src texture, 2nd,3rd is the top and right of the middle, and then top,right of bottom-right corner.
     nPatchInfo =(NPatchInfo) { (Rectangle) { 0,0,24,24 },8,8,16,16,NPATCH_NINE_PATCH };
 
-    sfx = RES_LoadSound("assets/sounds/ignore/name.wav");
+    sfx = RES_LoadSound("assets/sounds/ignore/great_ass.ogg");
     typingSFX = RES_LoadSound("assets/sounds/select_007.ogg");
+
+    /*iconTextures[ICON_TEXT_SMILEY - 0x60] = RES_LoadTexture("assets/textures/smiley.png");
+    iconTextures[ICON_TEXT_HEART - 0x60] = RES_LoadTexture("assets/textures/heart.png");*/
 }
 
 static void ChangeTextColor(TextColorCode colorCode)
@@ -132,6 +137,13 @@ static void ChangeTextSpeed(TextSpeed code)
         gDialogueBox.textDelay = 15;
         break;
     }
+}
+
+static void DrawIcon(int x, int y, int id)
+{
+    if (id < 0 || id >= MAX_ICONS)return;
+
+    RES_DrawTexture(iconTextures[id], x, y);
 }
 
 void DialogueBox_Render(void)
@@ -208,6 +220,10 @@ static void DialogueBox_RenderText(void)
             codepoint = GetCodepointNext(&dBox->curPage[++i], &codepointByteCount);
             ChangeTextSpeed(codepoint);
             break;
+        case CCODE_ICON:
+            /*codepoint = GetCodepointNext(&dBox->curPage[++i], &codepointByteCount);
+            DrawIcon(x + xOffset, y + yOffset, codepoint-0x60);*/
+            break;
         case CCODE_END_PAGE:
             if (dBox->state == DBOX_STATE_TYPING)
             {
@@ -220,7 +236,7 @@ static void DialogueBox_RenderText(void)
 
             //the typing sound should only be played for the last character typed,
             //otherwise, it will just keep playing each frame.
-            if(!dBox->state==DBOX_STATE_TYPING && i==dBox->textPos-1 && dBox->timer == dBox->textDelay)
+            if(dBox->state==DBOX_STATE_TYPING && i==dBox->textPos-1 && dBox->timer == dBox->textDelay)
                 RES_PlaySound(typingSFX);
 
             break;
@@ -310,7 +326,7 @@ void DialogueBox_Update(float dt)
     }
     else if (gDialogueBox.state == DBOX_STATE_TYPING)
     {
-        if (IsGamepadButtonPressed(0, GAMEPAD_BUTTON_RIGHT_FACE_RIGHT))
+        if (IsGamepadButtonPressed(0, GAMEPAD_BUTTON_RIGHT_FACE_RIGHT) && !gDialogueBox.bDontSkip)
         {
             DialogueBox_Skiptext();
         }
@@ -331,7 +347,12 @@ bool DialogueBox_IsDone(void)
 
 void DialogueBox_Hide(void)
 {
+    //TODO: Maybe put these in a finishUp function or something.
     gDialogueBox.bFinished = true;
+    gDialogueBox.endCallback = NULL;
+    gDialogueBox.callbackData = NULL;
+    gDialogueBox.dialogueText[0] = '\0';
+    gDialogueBox.curPage = NULL;
 }
 
 static void UpdateChoice(float dt)

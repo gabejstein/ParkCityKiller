@@ -32,6 +32,7 @@ typedef struct
     uint16_t bFinished : 1;
     uint16_t bImmediate : 1; //Determines whether or not to draw all characters instantly.
     uint16_t bIgnoreInput : 1; //Ignores input. Used in cutscenes.
+    uint16_t bDontSkip : 1;
 
     DialogueCallback endCallback;
     void* callbackData;

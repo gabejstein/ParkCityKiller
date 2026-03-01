@@ -5,7 +5,7 @@
 #include "entity/entity.h"
 
 GameState GetPlayState(void);
-Entity* NewEntity(void);
+
 
 Entity* GetPlayer(void);
 

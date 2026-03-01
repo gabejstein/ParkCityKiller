@@ -139,6 +139,7 @@
     <ClInclude Include="src\entity\enemy.h" />
     <ClInclude Include="src\const.h" />
     <ClInclude Include="src\entity\entity.h" />
+    <ClInclude Include="src\entity\interactable.h" />
     <ClInclude Include="src\entity\npc.h" />
     <ClInclude Include="src\gameWorld.h" />
     <ClInclude Include="src\gui\dialogueBox.h" />
@@ -161,6 +162,8 @@
     <ClInclude Include="src\titleState.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\entity\entity.c" />
+    <ClCompile Include="src\entity\interactable.c" />
     <ClCompile Include="src\entity\npc.c" />
     <ClCompile Include="src\gui\dialogueBox.c" />
     <ClCompile Include="src\script\script.c" />

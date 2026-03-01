@@ -74,4 +74,11 @@ struct Entity
 	ModelHandle model;
 };
 
+void Entity_Init(void);
+void Entity_Unload(void);
+Entity* NewEntity(void);
+void UpdateEntities(float dt);
+void RenderEntities(void);
+void DebugRenderEntities(void);
+
 #endif
