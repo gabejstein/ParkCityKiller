@@ -1,4 +1,7 @@
 #include "utils.h"
+#include "..\const.h"
+#include "..\game.h"
+#include <raymath.h>
 
 float GetRandomFloat(float min, float max) 
 {
@@ -17,5 +20,18 @@ int CheckPointInBox(const Vector3* point, const BoundingBox* box)
 		return 1;
 
 	return 0;
+}
+
+//Note: I dont like all these dependencies here.
+void DrawTextOverlay(const char* text, const Vector3 worldPos, int fontSize, Color color)
+{
+	if (Vector3DotProduct(Vector3Negate(gGame.mainCamera.transform.forward), Vector3Subtract(worldPos, gGame.mainCamera.transform.position)) < 0) return;
+
+	Vector2 pos = GetWorldToScreenEx(worldPos, *gGame.mainCamera.camera, VIRTUAL_WINDOW_W, VIRTUAL_WINDOW_H);
+
+	//TODO: Should probably account for text width/height as well, but whatever.
+	//TODO: Should also account for camera distance and scale accordingly.
+	if (pos.x >= 0 && pos.x <= VIRTUAL_WINDOW_W && pos.y >= 0 && pos.y <= VIRTUAL_WINDOW_H)
+		DrawText(text, (int)pos.x, (int)pos.y, fontSize, color);
 }
 

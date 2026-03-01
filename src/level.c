@@ -6,6 +6,7 @@
 #include "system/utils.h"
 #include "entity/player.h"
 #include "entity/npc.h"
+#include "const.h"
 
 //These will just be used with function pointers to load entities and other values temporarily.
 //Eventually level data should be loaded from files.
@@ -108,6 +109,7 @@ static void LoadHotel(Level* level)
 	
 }
 
+//This really shouldn't be an array of Levels, but LevelDefinitions
 static Level levelDB[MAX_LEVELS] = {
 	[LEVEL_OVERWORLD] = {
 		.load = LoadOverworld,
@@ -188,10 +190,19 @@ void Level_DebugRender(Level* level)
 		DrawSphereWires(level->portals[i].position, 0.4, 4, 4, PURPLE);
 	}
 		
-
+	if (!level->spawnPointCount)return;
 	//TODO: Draw overlay of id as well
 	for (int i = 0; i < level->spawnPointCount; i++)
 		DrawSphereWires(level->spawnPoints[i].pos, 0.4, 4, 4, ORANGE);
+}
+
+void Level_DebugRender2D(Level* level)
+{
+	for (int i = 0; i < level->portalCount; i++)
+		DrawTextOverlay(level->portals[i].spawnId, level->portals[i].position, 8, RED);
+
+	for (int i = 0; i < level->spawnPointCount; i++)
+		DrawTextOverlay(level->spawnPoints[i].id, level->spawnPoints[i].pos, 8, YELLOW);
 }
 
 void Level_SetNext(LEVEL_DEF_ID levelId, char* spawnId)

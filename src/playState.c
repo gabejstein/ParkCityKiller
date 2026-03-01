@@ -200,7 +200,7 @@ static void PlayState_Render(void)
 		DebugRenderEntities();
 
 		//World origin gizmo
-		Vector3 origin = (Vector3){ 0, 2, 0 };
+		Vector3 origin = (Vector3){ 0, 0.1, 0 };
 		DrawLine3D(origin, Vector3Add(origin, (Vector3) { 1, 0, 0 }), RED); //X
 		DrawLine3D(origin, Vector3Add(origin, (Vector3) { 0, 1, 0 }), GREEN); //Y
 		DrawLine3D(origin, Vector3Add(origin, (Vector3) { 0, 0, 1 }), BLUE); //Z
@@ -211,9 +211,16 @@ static void PlayState_Render(void)
 		Level_DebugRender(gGame.curLevel);
 
 		Debug_RenderSpawnZones();
+
+		
 	}
 
 	EndMode3D();
+
+	if (gGame.bDebugMode)
+	{
+		Level_DebugRender2D(gGame.curLevel);
+	}
 
 	DrawHud();
 	DrawMsgBox();
@@ -226,7 +233,6 @@ static void PlayState_Render(void)
 	if (GetPlayerState() == PLAYER_STATE_DEAD)
 		DrawText("HEALTHY GONE!!\nYOU ALL OVER!!",60,50,24,WHITE);
 
-	//printf("Vel y: %f\n", player->velocity.y);
 }
 
 static RayCollision HandleCameraCollisions(Vector3 target)
@@ -255,7 +261,6 @@ static RayCollision HandleCameraCollisions(Vector3 target)
 
 static void UpdatePlayerCamera(float dt)
 {
-
 	//INPUT
 	float mouseSensitivity = 100.0f;
 	float minPitch = -20.0f;
@@ -319,6 +324,7 @@ static void UpdatePlayerCamera(float dt)
 	
 	smooth = MIN(1, 8.0 * dt);
 	cam->camera->position = Vector3Lerp(cam->camera->position, cam->targetPos, smooth);
+	cam->transform.position = cam->camera->position; //This is not very elegant. Should fix.
 }
 
 static void UpdateDeathCamera(float dt)

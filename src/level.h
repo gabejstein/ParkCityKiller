@@ -49,6 +49,7 @@ void Level_Load(Level* level);
 void Level_Unload(Level* level);
 void Level_Update(Level* level, float dt);
 void Level_DebugRender(Level* level);
+void Level_DebugRender2D(Level* level);
 void Level_SetNext(LEVEL_DEF_ID levelId, char* spawnId);
 
 #endif
