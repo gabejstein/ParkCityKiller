@@ -6,6 +6,7 @@
 #include "../entity/npc.h"
 #include "../game.h"
 #include "../const.h"
+#include "../gui/dialogueBox.h"
 
 extern Game gGame;
 
@@ -45,29 +46,29 @@ int UpdateScript(Script* s, float dt)
         ScriptAction* act = &s->actions[s->curAction];
         switch (act->type)
         {
-        case ACT_SAY:   Script_Dialogue(act, dt); break;
-        case ACT_FADE_IN: Script_FadeIn(act, dt); break;
-        case ACT_FADE_OUT: Script_FadeOut(act, dt); break;
-        case ACT_MOVE_CAMERA: Script_MoveCamera(act, dt); break;
-        case ACT_PLAY_SOUND: Script_PlaySound(act, dt); break;
-        case ACT_WAIT: Script_Wait(act, dt); break;
-        case ACT_LABEL: break;
-        case ACT_JMP:
+        case SCRIPT_ACTION_DIALOGUE:   Script_Dialogue(act, dt); break;
+        case SCRIPT_ACTION_FADE_IN: Script_FadeIn(act, dt); break;
+        case SCRIPT_ACTION_FADE_OUT: Script_FadeOut(act, dt); break;
+        case SCRIPT_ACTION_MOVE_CAMERA: Script_MoveCamera(act, dt); break;
+        case SCRIPT_ACTION_PLAY_SOUND: Script_PlaySound(act, dt); break;
+        case SCRIPT_ACTION_WAIT: Script_Wait(act, dt); break;
+        case SCRIPT_ACTION_LABEL: break;
+        case SCRIPT_ACTION_JMP:
             for (int i = 0; i < s->actionsCount; i++)
             {
-                if (s->actions[i].type == ACT_LABEL && s->actions[i].params[0].iValue == act->params[0].iValue)
+                if (s->actions[i].type == SCRIPT_ACTION_LABEL && s->actions[i].params[0].iValue == act->params[0].iValue)
                     s->curAction = i;
             }
             break;
-        case ACT_BEQ:
+        case SCRIPT_ACTION_BEQ:
             if (s->xReg != act->params[0].iValue)break;
             for (int i = 0; i < s->actionsCount; i++)
             {
-                if (s->actions[i].type == ACT_LABEL && s->actions[i].params[0].iValue == act->params[1].iValue)
+                if (s->actions[i].type == SCRIPT_ACTION_LABEL && s->actions[i].params[0].iValue == act->params[1].iValue)
                     s->curAction = i;
             }
             break;
-        case ACT_LDX:
+        case SCRIPT_ACTION_LDX:
             s->xReg = act->params[0].iValue;
             break;
         }
@@ -90,10 +91,15 @@ void EndCurrentAction(Script* s)
     s->curAction++; //may not need this.
 }
 
+void Script_RunScript(Script* s)
+{
+
+}
+
 //----------------------Script Helper Functions (Could be moved to macros instead)---------------------------------
 ScriptAction Wait(float time)
 {
-    ScriptAction action = (ScriptAction){ .type = ACT_WAIT,.nParams = 1 };
+    ScriptAction action = (ScriptAction){ .type = SCRIPT_ACTION_WAIT,.nParamsCount = 1 };
     action.params[0].type = PARAM_FLOAT;
     action.params[0].fValue = time;
     return action;
@@ -101,7 +107,7 @@ ScriptAction Wait(float time)
 
 ScriptAction Label(int id)
 {
-    ScriptAction action = (ScriptAction){ .type = ACT_LABEL,.nParams = 1 };
+    ScriptAction action = (ScriptAction){ .type = SCRIPT_ACTION_LABEL,.nParamsCount = 1 };
     action.params[0].type = PARAM_INT;
     action.params[0].iValue = id;
     return action;
@@ -109,7 +115,7 @@ ScriptAction Label(int id)
 
 ScriptAction JMP(int id)
 {
-    ScriptAction action = (ScriptAction){ .type = ACT_JMP,.nParams = 1 };
+    ScriptAction action = (ScriptAction){ .type = SCRIPT_ACTION_JMP,.nParamsCount = 1 };
     action.params[0].type = PARAM_INT;
     action.params[0].iValue = id;
     return action;
@@ -117,7 +123,7 @@ ScriptAction JMP(int id)
 
 ScriptAction LDX(int id)
 {
-    ScriptAction action = (ScriptAction){ .type = ACT_LDX,.nParams = 1 };
+    ScriptAction action = (ScriptAction){ .type = SCRIPT_ACTION_LDX,.nParamsCount = 1 };
     action.params[0].type = PARAM_INT;
     action.params[0].iValue = id;
     return action;
@@ -125,7 +131,7 @@ ScriptAction LDX(int id)
 
 ScriptAction BEQ(int val, int labelId)
 {
-    ScriptAction action = (ScriptAction){ .type = ACT_BEQ,.nParams = 2 };
+    ScriptAction action = (ScriptAction){ .type = SCRIPT_ACTION_BEQ,.nParamsCount = 2 };
     action.params[0].type = PARAM_INT;
     action.params[0].iValue = val;
 
@@ -136,7 +142,7 @@ ScriptAction BEQ(int val, int labelId)
 
 ScriptAction PlaySoundEffect(int id)
 {
-    ScriptAction action = (ScriptAction){ .type = ACT_PLAY_SOUND,.nParams = 1 };
+    ScriptAction action = (ScriptAction){ .type = SCRIPT_ACTION_PLAY_SOUND,.nParamsCount = 1 };
     action.params[0].type = PARAM_INT;
     action.params[0].iValue = id;
     return action;
@@ -144,7 +150,7 @@ ScriptAction PlaySoundEffect(int id)
 
 ScriptAction Say(const char* text)
 {
-    ScriptAction action = (ScriptAction){ .type = ACT_SAY,.nParams = 1 };
+    ScriptAction action = (ScriptAction){ .type = SCRIPT_ACTION_DIALOGUE,.nParamsCount = 1 };
     action.params[0].type = PARAM_TEXT;
     strcpy(action.params[0].text, text);
     return action;
@@ -152,7 +158,7 @@ ScriptAction Say(const char* text)
 
 ScriptAction FadeIn(float duration)
 {
-    ScriptAction action = (ScriptAction){ .type = ACT_FADE_IN,.nParams = 1 };
+    ScriptAction action = (ScriptAction){ .type = SCRIPT_ACTION_FADE_IN,.nParamsCount = 1 };
     action.params[0].type = PARAM_FLOAT;
     action.params[0].fValue = MAX(0.001,duration); //clamp to prevent divide by zero errors.
     return action;
@@ -160,7 +166,7 @@ ScriptAction FadeIn(float duration)
 
 ScriptAction MoveCamera(Vector3 targetPos, Vector3 lookTarget)
 {
-    ScriptAction action = (ScriptAction){ .type = ACT_MOVE_CAMERA,.nParams = 9 };
+    ScriptAction action = (ScriptAction){ .type = SCRIPT_ACTION_MOVE_CAMERA,.nParamsCount = 9 };
     action.params[0].type = PARAM_FLOAT;
     action.params[0].fValue = targetPos.x;
 
@@ -196,12 +202,12 @@ static void Script_Dialogue(ScriptAction* a, float dt)
     {
         printf("Starting dialogue script.\n");
         a->bStarted = true;
-        //SetDialogueBox(a->params[0].text);
+        DialogueBox_AddText(a->params[0].text);
     }
     else
     {
-        /*if (DialogueBoxFinished())
-            a->bFinished = true;*/
+        if (DialogueBox_IsDone())
+            a->bFinished = true;
     }
 }
 

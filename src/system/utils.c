@@ -22,10 +22,22 @@ int CheckPointInBox(const Vector3* point, const BoundingBox* box)
 	return 0;
 }
 
+#define MIN_CAMERA_SQRDIST (10.0f*10.0f)
+#define MAX_CAMERA_SQRDIST (100.0f*100.0f)
+
 //Note: I dont like all these dependencies here.
+//TODO: may need some way to set font as well.
 void DrawTextOverlay(const char* text, const Vector3 worldPos, int fontSize, Color color)
 {
-	if (Vector3DotProduct(Vector3Negate(gGame.mainCamera.transform.forward), Vector3Subtract(worldPos, gGame.mainCamera.transform.position)) < 0) return;
+	Vector3 offset = Vector3Subtract(worldPos, gGame.mainCamera.transform.position);
+	if (Vector3DotProduct(Vector3Negate(gGame.mainCamera.transform.forward), offset) < 0) return;
+
+	float sqrDist = offset.x*offset.x+offset.y*offset.y+offset.z*offset.z;
+	if (sqrDist > MAX_CAMERA_SQRDIST)return;
+
+	//I dont know why this doesn't work.
+	/*float scale = MIN_CAMERA_SQRDIST / sqrDist;
+	fontSize = MIN(fontSize,(int)(fontSize * scale));*/
 
 	Vector2 pos = GetWorldToScreenEx(worldPos, *gGame.mainCamera.camera, VIRTUAL_WINDOW_W, VIRTUAL_WINDOW_H);
 

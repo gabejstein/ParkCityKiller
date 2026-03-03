@@ -3,27 +3,35 @@
 
 typedef struct ScriptAction ScriptAction;
 
-#define MAX_SCRIPT_TEXT 256
+#define MAX_SCRIPT_TEXT 512
 #define MAX_PARAM 12
 #define MAX_ACTIONS 256
 
 #include <raylib.h>
+#include <stdbool.h>
 
 typedef enum
 {
-    ACT_SAY,
-    ACT_PLAY_SOUND,
-    ACT_WAIT,
-    ACT_MOVE,
-    ACT_CHANGE_MAP,
-    ACT_MOVE_CAMERA,
-    ACT_FADE_IN,
-    ACT_FADE_OUT,
-    ACT_LABEL,
-    ACT_JMP, //Unconditional Goto
-    ACT_LDX, //Set x register
-    ACT_BEQ, //Branch on equals
-}ACTION_TYPE;
+    SCRIPT_ACTION_DIALOGUE,
+    SCRIPT_ACTION_DIALOGUE_CONTINUE, //Does not wait for dismissal.
+    SCRIPT_ACTION_SET_FLAG, //Sets a story flag.
+    SCRIPT_ACTION_GET_FLAG, //should store in a register or something.
+    SCRIPT_ACTION_GIVE_ITEM,
+    SCRIPT_ACTION_REMOVE_ITEM,
+    SCRIPT_ACTION_PLAY_SOUND,
+    SCRIPT_ACTION_WAIT,
+    SCRIPT_ACTION_WAIT_CAMERA,
+    SCRIPT_ACTION_MOVE,
+    SCRIPT_ACTION_CHANGE_MAP,
+    SCRIPT_ACTION_MOVE_CAMERA,
+    SCRIPT_ACTION_ANIMATE_NPC,
+    SCRIPT_ACTION_FADE_IN,
+    SCRIPT_ACTION_FADE_OUT,
+    SCRIPT_ACTION_LABEL,
+    SCRIPT_ACTION_JMP, //Unconditional Goto
+    SCRIPT_ACTION_LDX, //Set x register
+    SCRIPT_ACTION_BEQ, //Branch on equals
+}SCRIPT_ACTION_TYPE;
 
 typedef enum
 {
@@ -34,35 +42,37 @@ typedef enum
 
 typedef struct
 {
-    int type;
+    PARAM_TYPE type;
     union
     {
         int IO_Value;
         int iValue;
         float fValue;
+        bool bValue;
     };
-    char text[MAX_SCRIPT_TEXT];
+    char text[MAX_SCRIPT_TEXT]; //Should either allocate or maybe just have index into a text table instead.
 }Value;
 
 struct ScriptAction
 {
-    int type;
-    int nParams;
+    SCRIPT_ACTION_TYPE type;
+    int nParamsCount;
     Value params[MAX_PARAM];
-    int bStarted;
-    int bFinished;
-    int bBlocking;
+    bool bStarted;
+    bool bFinished;
+    bool bBlocking;
 };
 
 typedef struct
 {
     ScriptAction actions[MAX_ACTIONS];
-    int actionsCount;
-    int curAction;
+    unsigned int actionsCount;
+    unsigned int curAction;
     //script context variables:
     float timer;
     int xReg;
-    void* owner; //may not keep this in the end, but could be useful for NPCs to perform actions on themselves.
+    unsigned int dataSize;
+    void* data; //may not keep this in the end, but could be useful for NPCs to perform actions on themselves.
 }Script;
 
 void SaveScript(const char* filename, Script* s);
@@ -70,7 +80,8 @@ void LoadScript(const char* filename);
 void ResetScript(Script* script);
 int UpdateScript(Script* s, float dt);
 void EndCurrentAction(Script* s);
-void EnterScriptState(Script* s);
+//void EnterScriptState(Script* s); //old project
+void Script_RunScript(Script* s);
 
 //Helper functions
 ScriptAction Wait(float time);
