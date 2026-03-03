@@ -12,6 +12,7 @@ typedef enum
 }PLAYER_STATE;
 
 PLAYER_STATE GetPlayerState(void);
+Entity* Player_GetInteractable(void);
 
 void Player_Common_Init(void);
 void Player_Common_Unload(void);

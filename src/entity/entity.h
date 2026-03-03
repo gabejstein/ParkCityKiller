@@ -53,6 +53,7 @@ typedef void(*EntityRender)(Entity*);
 
 struct Entity
 {
+	unsigned int id;
 	int health;
 	int bActive;
 	int flags;
@@ -77,8 +78,11 @@ struct Entity
 void Entity_Init(void);
 void Entity_Unload(void);
 Entity* NewEntity(void);
+Entity* Entity_GetById(unsigned int id);
 void UpdateEntities(float dt);
 void RenderEntities(void);
 void DebugRenderEntities(void);
+
+Entity* Entity_QueryWorld_Sphere(Vector3 center, float radius);
 
 #endif

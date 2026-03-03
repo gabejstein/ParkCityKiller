@@ -217,8 +217,8 @@ static void Script_Wait(ScriptAction* a, float dt)
 {
     if (!a->bStarted)
     {
-        printf("Starting wait.\n");
         a->params[1].fValue = 0;
+        printf("Starting wait.\n");
         a->bStarted = true;
     }
     else

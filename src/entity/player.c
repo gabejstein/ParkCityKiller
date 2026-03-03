@@ -9,6 +9,17 @@
 #include "../const.h"
 #include "../gui/msgBox.h"
 
+#include "npc.h"
+
+typedef struct
+{
+	Vector3 center;
+	float radius;
+}InteractionZone;
+
+static InteractionZone playerInteractionZone;
+Entity* interactable = NULL;
+
 static const float speed = 15.0f;
 static const float turnSpeed = 200.0f;
 static float jumpForce = 0.0;
@@ -111,6 +122,7 @@ void Player_New(Entity* e, Vector3 position)
 	e->collider.offset = (Vector3){ 0,0.8,0 };
 	e->collider.radius = 0.9f;
 
+	interactable = NULL;
 }
 
 static void Player_Update(Entity* p, float dt)
@@ -143,8 +155,15 @@ static void Player_Update(Entity* p, float dt)
 	else
 	{
 		playerState = PLAYER_STATE_MOVE;
+		UpdatePlayerMove(p, dt);
 	}
 
+	
+}
+
+static void UpdatePlayerMove(Entity* p, float dt)
+{
+	int gamepad = 0;
 	float deadZone = 0.2;
 	float horAxis = GetGamepadAxisMovement(gamepad, GAMEPAD_AXIS_LEFT_X);
 	float vertAxis = GetGamepadAxisMovement(gamepad, GAMEPAD_AXIS_LEFT_Y);
@@ -153,22 +172,22 @@ static void Player_Update(Entity* p, float dt)
 	if (fabs(vertAxis) < deadZone) vertAxis = 0.0f;
 
 	Vector2 dirVec = (Vector2){ -horAxis,-vertAxis };
-	
+
 	float magnitude = Vector2Length(dirVec);
-	
+
 	if (magnitude > 0)
 	{
 		dirVec = Vector2Normalize(dirVec);
-		
+
 		float angle = atan2f(dirVec.x, dirVec.y);
-		p->transform.rotation.y = angle * RAD2DEG - gGame.mainCamera.transform.rotation.y-90;
+		p->transform.rotation.y = angle * RAD2DEG - gGame.mainCamera.transform.rotation.y - 90;
 
 		float moveOffset = magnitude * speed;
 		p->velocity = (Vector3){ p->transform.forward.x * moveOffset,p->velocity.y,p->transform.forward.z * moveOffset };
-		
+
 	}
 
-	if (IsGamepadButtonPressed(gamepad,GAMEPAD_BUTTON_RIGHT_FACE_DOWN))
+	if (IsGamepadButtonPressed(gamepad, GAMEPAD_BUTTON_RIGHT_FACE_DOWN))
 	{
 		if (p->bGrounded)
 		{
@@ -191,27 +210,37 @@ static void Player_Update(Entity* p, float dt)
 			CH_PlayAnimationByIndex(&animController, ANIM_IDLE);
 			CH_UpdateAnimationController(&animController, dt);
 		}
-		
+
 	}
 	else
 	{
 		//TODO: if velocity is positive, play jump anim, else play fall anim
 		//Comment this out because its distracting for debugging the physics.
-		if(p->velocity.y > 0)
+		if (p->velocity.y > 0)
 			CH_PlayAnimationByIndex(&animController, ANIM_JUMP);
 		else
 			CH_PlayAnimationByIndex(&animController, ANIM_FALL);
-		
+
 		CH_UpdateAnimationController(&animController, dt);
 	}
-	
-	
+
+	playerInteractionZone.center = Vector3Add(p->transform.position, Vector3Scale(p->transform.forward, 5.3f));
+	playerInteractionZone.center.y += 0.5f;
+	playerInteractionZone.radius = 3.0f;
+
+	interactable = Entity_QueryWorld_Sphere(playerInteractionZone.center, playerInteractionZone.radius);
+	if (interactable)
+	{
+		if (interactable->tag == ET_NPC)
+		{
+			if(IsGamepadButtonPressed(gamepad,GAMEPAD_BUTTON_RIGHT_FACE_LEFT))
+				NPC_Interact(interactable);
+		}
+		
+	}
 }
 
-static void UpdatePlayerMove(Entity* p, float dt)
-{
-
-}
+Entity* Player_GetInteractable(void) { return interactable; }
 
 static void UpdatePlayerAim(Entity* p, float dt)
 {
@@ -240,6 +269,7 @@ static void UpdatePlayerAim(Entity* p, float dt)
 		if (gGame.playerStats.bullets > 0)
 		{
 			Vector3 firingPos = (Vector3){ 0,1.0f,0 };
+			firingPos = Vector3Add(firingPos, Vector3Scale(p->transform.forward, 0.3f));
 			firingPos = Vector3Add(p->transform.position, firingPos);
 			Vector3 bulletVel = Vector3Scale(p->transform.forward, 40.0f);
 			SpawnBullet(firingPos, bulletVel, p->tag);
@@ -299,6 +329,10 @@ static void Player_DebugRender(Entity* p)
 
 	//Draw Jump height
 	DrawSphereWires((Vector3) { p->transform.position.x, p->groundPos.y + jumpHeight, p->transform.position.z }, 0.2, 4, 4, RED);
+
+	//Note: This will probably jitter when drawn because of the collision system, but that's okay
+	//since the purpose of this object is not visual.
+	DrawSphereWires(playerInteractionZone.center, playerInteractionZone.radius, 4, 4, DARKPURPLE);
 }
 
 static void Player_Unload(Entity* p)

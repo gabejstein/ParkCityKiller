@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "../system/animation.h"
+#include "../gui/dialogueBox.h"
 
 static Model shadow;
 static Texture shadowTexture;
@@ -14,9 +15,18 @@ typedef enum
 	ANIM_FALL,
 	ANIM_JUMP,
 	ANIM_AIM,
-	ANIM_DEAD
-
+	ANIM_DEAD,
+	ANIM_ATTACK_SWORD,
+	ANIM_BOARD,
+	ANIM_SPEAK
 }ANIM_STATE;
+
+typedef enum
+{
+	NPC_STATE_IDLE,
+	NPC_STATE_MOVE,
+	NPC_STATE_SPEAK
+}NPC_STATE;
 
 //TODO: create some sort of interactable object that's separate
 //from the npc so it can be reused for things like signs, doors,etc.
@@ -26,6 +36,7 @@ typedef struct
 	Vector3 headPos;
 	CH_AnimationController animController;
 	ANIM_STATE animState;
+	NPC_STATE npcState;
 }NPC_Data;
 
 void NPC_CommonInit(void)
@@ -37,9 +48,31 @@ void NPC_CommonInit(void)
 
 static void NPC_Update(Entity* e, float dt)
 {
-	NPC_Data* data = (NPC_Data*) e->data;
-	CH_PlayAnimationByIndex(&data->animController, ANIM_IDLE);
-	CH_UpdateAnimationController(&data->animController, dt);
+	NPC_Data* npc = (NPC_Data*) e->data;
+	switch (npc->npcState)
+	{
+		case NPC_STATE_IDLE:
+			CH_PlayAnimationByIndex(&npc->animController, npc->animState);
+			break;
+		case NPC_STATE_MOVE:
+			break;
+		case NPC_STATE_SPEAK:
+			CH_PlayAnimationByIndex(&npc->animController, ANIM_SPEAK);
+			if (CH_AnimationFinished(&npc->animController))
+				npc->npcState = NPC_STATE_IDLE;
+			break;
+	}
+	
+	CH_UpdateAnimationController(&npc->animController, dt);
+}
+
+//Just using this to test animations for now.
+void NPC_Interact(Entity* e)
+{
+	NPC_Data* npc = (NPC_Data*)e->data;
+	npc->npcState = NPC_STATE_SPEAK;
+	DialogueBox_AddText("The oooold shim sham!!!");
+	printf("Interaction triggered.\n");
 }
 
 static void NPC_Render(Entity* e)
@@ -88,6 +121,8 @@ void NPC_New(Entity* e, Vector3 pos, float rot)
 	CH_SetClipLoopIndex(&data->animController, ANIM_RUN, 1);
 	CH_SetClipLoopIndex(&data->animController, ANIM_AIM, 1);
 	data->animState = ANIM_IDLE;
+
+	data->npcState = NPC_STATE_IDLE;
 
 	e->data = data;
 }

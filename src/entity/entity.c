@@ -6,7 +6,7 @@
 //entities
 #define MAX_ENTITY 1000
 static Entity entities[MAX_ENTITY];
-static int curEntity = 0;
+static unsigned int curEntity = 0;
 
 static void ResolveSphereCollision(Entity* e1, Entity* e2);
 
@@ -33,14 +33,22 @@ Entity* NewEntity(void)
 	if (curEntity >= MAX_ENTITY)
 		return NULL;
 
-	Entity* e = &entities[curEntity++];
+	Entity* e = &entities[curEntity];
 	memset(e, 0, sizeof(Entity));
+	e->id = curEntity++;
 	e->bActive = 1;
 	e->transform.rotation = Vector3Zero();
 	e->collider.offset = Vector3Zero();
 	e->collider.timeStep = 1;
 
 	return e;
+}
+
+Entity* Entity_GetById(unsigned int id)
+{
+	if (id < 0 || id >= curEntity)return NULL;
+
+	return &entities[id];
 }
 
 static RayCollision GetClosestLevelCollision(Vector3 position, Vector3 direction)
@@ -285,4 +293,25 @@ void DebugRenderEntities(void)
 
 	}
 
+}
+
+//The problem with this now is that it may return just the calling object since that's closest.
+//Should probably return a linked list instead.
+Entity* Entity_QueryWorld_Sphere(Vector3 center, float radius)
+{
+	Entity* result = NULL;
+	for (int i = 0; i < curEntity; i++)
+	{
+		Entity* e = &entities[i];
+		if (!e->bActive || e->collider.type != CT_SPHERE)
+			continue;
+
+		if (CheckCollisionSpheres(center, radius, e->collider.center, e->collider.radius))
+		{
+			result = e;
+			return result;
+		}
+	}
+
+	return result;
 }
