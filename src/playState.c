@@ -21,6 +21,8 @@
 
 #include "const.h"
 
+#include "script/script.h"
+
 static const Color bgColor = { 0,0,0,255 };
 
 static void PlayState_Start(void);
@@ -38,8 +40,10 @@ static ModelHandle levelCollider;
 
 static Camera camera = { 0 };
 
-TextureHandle background; //TODO: make this dependent on the level.
 static TextureHandle crossHair;
+
+static Script testScript;
+static bool scriptRunning = false;
 
 static void DrawHud(void)
 {
@@ -103,9 +107,12 @@ static void PlayState_Start(void)
 	gGame.mainCamera.camera = &camera;
 	gGame.mainCamera.transform.rotation = (Vector3){ 0.0,0.0,0.0 };
 
-	background = RES_LoadTexture("assets/textures/skybox_03.png");
 	crossHair = RES_LoadTexture("assets/textures/Crosshair_01.png");
 
+	Script* s = &testScript;
+	AddAction(s, Say("AAAAAA"));
+	AddAction(s, Say("Bob"));
+	AddAction(s, Say("Bob: Nuthin'"));
 }
 
 static void PlayState_Unload(void)
@@ -119,21 +126,36 @@ static void PlayState_Unload(void)
 
 static void PlayState_Update(float dt)
 {
-	if (gGame.fader.alpha > 0)
-	{
-		gGame.fader.alpha -= dt;
-		if (gGame.fader.alpha < 0)gGame.fader.alpha = 0;
-	}
-	Level_Update(gGame.curLevel, dt);
 	UpdateCamera(&camera, CAMERA_PERSPECTIVE);
 	Vector3 cameraDir = Vector3Subtract(camera.position, camera.target);
 	RES_UpdateShader(&camera.position, &cameraDir);
 	UpdateParticleSystem(dt);
 	UpdateMsgBox(dt);
 
+	if (scriptRunning)
+	{
+		scriptRunning = Script_Update(&testScript, dt);
+	}
+	else
+	{
+		if (IsKeyPressed(KEY_S))
+		{
+			scriptRunning = true;
+			Script_RunScript(&testScript);
+		}
+			
+	}
+
+	if (gGame.fader.alpha > 0)
+	{
+		gGame.fader.alpha -= dt;
+		if (gGame.fader.alpha < 0)gGame.fader.alpha = 0;
+	}
+
 	if (!DialogueBox_IsDone())
 		DialogueBox_Update(dt);
 
+	Level_Update(gGame.curLevel, dt);
 	UpdateEntities(dt);
 
 	if (GetPlayerState() == PLAYER_STATE_DEAD)
@@ -143,8 +165,10 @@ static void PlayState_Update(float dt)
 
 	UpdateSpawnZones(dt, &player->transform.position);
 
+#if DEBUG_TOOLS
 	if (IsKeyPressed(KEY_X))
 		gGame.bDebugMode = !gGame.bDebugMode;
+#endif
 
 	if (IsKeyPressed(KEY_M))
 		PushMsgBox("This is a message");
@@ -187,7 +211,7 @@ static void PlayState_Render(void)
 {
 	ClearBackground(bgColor);
 
-	RES_DrawTexture(background, 0, 0);
+	RES_DrawTexture(gGame.curLevel->background, 0, 0);
 
 	BeginMode3D(camera);
 
@@ -195,6 +219,7 @@ static void PlayState_Render(void)
 	RenderEntities();
 	RenderParticleSystem(&camera);
 
+#if DEBUG_TOOLS
 	if (gGame.bDebugMode)
 	{
 		DebugRenderEntities();
@@ -211,17 +236,12 @@ static void PlayState_Render(void)
 		Level_DebugRender(gGame.curLevel);
 
 		Debug_RenderSpawnZones();
-
 		
 	}
-
+#endif
 	EndMode3D();
 
-	if (gGame.bDebugMode)
-	{
-		Level_DebugRender2D(gGame.curLevel);
-	}
-
+	//----------------HUD/GUI stuff here----------------
 	DrawHud();
 	DrawMsgBox();
 	if (!DialogueBox_IsDone())
@@ -232,6 +252,13 @@ static void PlayState_Render(void)
 
 	if (GetPlayerState() == PLAYER_STATE_DEAD)
 		DrawText("HEALTHY GONE!!\nYOU ALL OVER!!",60,50,24,WHITE);
+
+#if DEBUG_TOOLS
+	if (gGame.bDebugMode)
+	{
+		Level_DebugRender2D(gGame.curLevel);
+	}
+#endif
 
 }
 

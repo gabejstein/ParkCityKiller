@@ -16,6 +16,8 @@ static void LoadOverworld(Level* level)
 	level->model = RES_LoadModel("assets/models/super_mega_world4.glb");
 	level->collisionModel = level->model;
 
+	level->background = RES_LoadTexture("assets/textures/skybox_03.png");
+
 	level->player = NewEntity();
 	Player_New(level->player, (Vector3) { 4.0f, 3.0f, 4.0f });
 
@@ -64,6 +66,8 @@ static void LoadHotel(Level* level)
 	printf("Loading Hotel");
 	level->model = RES_LoadModel("assets/models/hotel_01.glb");
 	level->collisionModel = level->model;
+
+	level->background = RES_LoadTexture("assets/textures/skybox_hotel_test.png");
 
 	level->player = NewEntity();
 	Player_New(level->player, (Vector3) { 0.0f, 0.0f, 0.0f });
@@ -179,6 +183,18 @@ void Level_Update(Level* level, float dt)
 	}
 }
 
+void Level_SetNext(LEVEL_DEF_ID levelId, char* spawnId)
+{
+	gGame.nextLevel = levelId;
+
+	if (!spawnId)return;
+
+	char* p = spawnId;
+	char* out = gGame.nextSpawn;
+	while ((*out++ = *p++));
+}
+
+#if DEBUG_TOOLS
 void Level_DebugRender(Level* level)
 {
 	if (!level->portalCount)return;
@@ -204,14 +220,4 @@ void Level_DebugRender2D(Level* level)
 	for (int i = 0; i < level->spawnPointCount; i++)
 		DrawTextOverlay(level->spawnPoints[i].id, level->spawnPoints[i].pos, 8, YELLOW);
 }
-
-void Level_SetNext(LEVEL_DEF_ID levelId, char* spawnId)
-{
-	gGame.nextLevel = levelId;
-	
-	if (!spawnId)return;
-
-	char* p = spawnId;
-	char* out = gGame.nextSpawn;
-	while ((*out++ = *p++));
-}
+#endif

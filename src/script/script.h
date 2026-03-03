@@ -75,15 +75,15 @@ typedef struct
     void* data; //may not keep this in the end, but could be useful for NPCs to perform actions on themselves.
 }Script;
 
-void SaveScript(const char* filename, Script* s);
-void LoadScript(const char* filename);
-void ResetScript(Script* script);
-int UpdateScript(Script* s, float dt);
-void EndCurrentAction(Script* s);
+void Script_Save(const char* filename, Script* s);
+void Script_Load(const char* filename);
+void Script_Reset(Script* script);
+int Script_Update(Script* s, float dt);
+void Script_EndCurrentAction(Script* s);
 //void EnterScriptState(Script* s); //old project
 void Script_RunScript(Script* s);
 
-//Helper functions
+//Helper functions for building in code.
 ScriptAction Wait(float time);
 ScriptAction Label(int id);
 ScriptAction JMP(int id);

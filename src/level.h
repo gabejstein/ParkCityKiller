@@ -36,6 +36,7 @@ typedef struct
 	SpawnPoint* spawnPoints;
 	ModelHandle model;
 	ModelHandle collisionModel;
+	TextureHandle background;
 	void (*load)(struct Level*); //Note: may not need this, but could be useful if there's level-specific logic.
 	void (*unload)(struct Level*);
 	Entity* player;

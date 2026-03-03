@@ -319,7 +319,7 @@ void DialogueBox_Update(float dt)
     {
         if (IsGamepadButtonPressed(0, GAMEPAD_BUTTON_RIGHT_FACE_RIGHT))
         {
-            gDialogueBox.bFinished = true;
+            DialogueBox_Hide();
             if (gDialogueBox.endCallback)
                 gDialogueBox.endCallback(gDialogueBox.callbackData);
         }
@@ -349,8 +349,6 @@ void DialogueBox_Hide(void)
 {
     //TODO: Maybe put these in a finishUp function or something.
     gDialogueBox.bFinished = true;
-    gDialogueBox.endCallback = NULL;
-    gDialogueBox.callbackData = NULL;
     gDialogueBox.dialogueText[0] = '\0';
     gDialogueBox.curPage = NULL;
 }

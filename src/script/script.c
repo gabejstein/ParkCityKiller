@@ -19,17 +19,17 @@ static void Script_FadeIn(ScriptAction* a, float dt); //TODO: make both fades on
 static void Script_FadeOut(ScriptAction* a, float dt);
 static void Script_PlaySound(ScriptAction* a, float dt);
 
-void SaveScript(const char* filename, Script* s)
+void Script_Save(const char* filename, Script* s)
 {
 
 }
 
-void LoadScript(const char* filename)
+void Script_Load(const char* filename)
 {
 
 }
 
-void ResetScript(Script* script)
+void Script_Reset(Script* script)
 {
     script->curAction = 0;
     script->timer = 0;
@@ -39,7 +39,7 @@ void ResetScript(Script* script)
         script->actions[i].bStarted = script->actions[i].bFinished = 0;
 }
 
-int UpdateScript(Script* s, float dt)
+int Script_Update(Script* s, float dt)
 {
     if (s->curAction < s->actionsCount)
     {
@@ -85,7 +85,7 @@ int UpdateScript(Script* s, float dt)
 }
 
 
-void EndCurrentAction(Script* s)
+void Script_EndCurrentAction(Script* s)
 {
     s->actions[s->curAction].bFinished = 1;
     s->curAction++; //may not need this.
@@ -93,7 +93,8 @@ void EndCurrentAction(Script* s)
 
 void Script_RunScript(Script* s)
 {
-
+    if (!s)return;
+    Script_Reset(s);
 }
 
 //----------------------Script Helper Functions (Could be moved to macros instead)---------------------------------
@@ -206,6 +207,7 @@ static void Script_Dialogue(ScriptAction* a, float dt)
     }
     else
     {
+        DialogueBox_Update(dt);
         if (DialogueBox_IsDone())
             a->bFinished = true;
     }
