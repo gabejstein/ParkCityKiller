@@ -200,7 +200,7 @@ static void DialogueBox_RenderText(void)
             break;
         case '\0':
             dBox->state = DBOX_STATE_END;
-            break;
+            return;
         case ' ':
             xOffset += CHAR_SPACING;
             break;
@@ -257,17 +257,16 @@ static void DialogueBox_RenderText(void)
     
 }
 
-void DialogueBox_AddTextEx(char* text, DialogueCallback callback, void* data)
+void DialogueBox_AddTextEx(const char* text, DialogueCallback callback, void* data)
 {
     DialogueBox_Reset();
     bPlayedSFX = false;
     
-    char* p = text;
+    const char* p = text;
     char* out = gDialogueBox.dialogueText;
-    while ((*out++ = *p++));
+    while (*out++ = *p++);
 
     gDialogueBox.curPage = gDialogueBox.dialogueText;
-    gDialogueBox.textPos = 0;
 
     gDialogueBox.endCallback = callback;
     gDialogueBox.callbackData = data;
@@ -275,13 +274,14 @@ void DialogueBox_AddTextEx(char* text, DialogueCallback callback, void* data)
     gDialogueBox.state = DBOX_STATE_TYPING;
 }
 
-void DialogueBox_AddText(char* text)
+void DialogueBox_AddText(const char* text)
 {
     DialogueBox_AddTextEx(text, NULL, NULL);
 }
 
 void DialogueBox_Reset(void)
 {
+    gDialogueBox.textPos = 0;
     gDialogueBox.timer = 0;
     gDialogueBox.bFinished = 0;
 }

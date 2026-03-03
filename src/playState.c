@@ -183,8 +183,17 @@ static void PlayState_Update(float dt)
 		char* text2 = "The \x05\x46president\x05\x41 has been\nkidnapped by ninjas.\x04"
 			"Are you a bad enough dude to\nrescue her?"
 			"...because she's\ngot\x08\x01 a \x08\x03\x05\x42GREAT\x06 ASSSS!!";
-		DialogueBox_AddText(text2);
+
+		char* text3 = "I'm sick of that other \x05\x46text\x05\x41.";
+		DialogueBox_AddText(text3);
 	}
+
+	if (IsKeyPressed(KEY_D))
+	{
+		char* text = "Dog.";
+		DialogueBox_AddText(text);
+	}
+		
 
 	if (IsKeyPressed(KEY_J))
 		Level_SetNext(LEVEL_HOTEL, NULL);
