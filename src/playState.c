@@ -53,11 +53,14 @@ static void DrawHud(void)
 	
 	Entity* interactable = Player_GetInteractable();
 
+	//Context Pop-up for interactable objects
 	if (interactable)
 	{
 		if (interactable->tag == ET_NPC)
 		{
-			DrawText("SPEAK TO", 10, 10, 12, DARKPURPLE);
+			//TODO: Actually measure size of text. Also, change text based on context.
+			DrawRectangle(8, 8, 72, 14, GRAY);
+			DrawText("SPEAK TO", 10, 10, 12, BLACK);
 		}
 	}
 }
@@ -100,10 +103,10 @@ static void PlayState_Start(void)
 	Level_Load(gGame.curLevel);
 
 	player = gGame.curLevel->player;
-	//NewPlayer(player, (Vector3) { 4.0f, 3.0f, 4.0f });
 	startPos = player->transform.position;
 
 	Enemy_SetPlayer(player);
+	NPC_SetPlayer(player);
 
 	levelModel = gGame.curLevel->model;
 	levelCollider = gGame.curLevel->collisionModel;
@@ -120,11 +123,11 @@ static void PlayState_Start(void)
 	crossHair = RES_LoadTexture("assets/textures/Crosshair_01.png");
 
 	Script* s = &testScript;
-	AddAction(s, Say("Bob: Yo\x05\x46 dawg\x05\x41! What's goin' on?\x04You still detectiving?"));
+	AddAction(s, Say("Bob: Yo\x05\x46 Rick\x05\x41! What's goin' on?\x04You still detectiving?"));
 	AddAction(s, Wait(0.8f));
 	AddAction(s, Say("Rick: Not much, Bobby!\x04Just tryin' to solve this case."));
 	AddAction(s, Wait(0.8f));
-	AddAction(s, Say("Bob: Awright."));
+	AddAction(s, Say("Bob: Okay."));
 }
 
 static void PlayState_Unload(void)
@@ -158,12 +161,6 @@ static void PlayState_Update(float dt)
 			
 	}
 
-	if (IsKeyPressed(KEY_N))
-	{
-		Entity* e = Entity_GetById(301);
-		NPC_Interact(e);
-	}
-
 	if (gGame.fader.alpha > 0)
 	{
 		gGame.fader.alpha -= dt;
@@ -190,19 +187,13 @@ static void PlayState_Update(float dt)
 
 	if (IsKeyPressed(KEY_C))
 	{
-		char* text = "Hello, my name is\x05\x46 Rick Atlanta\x06\x05\x41\x08\x01.\n"
-			"\x08\x02Yo mama is\x08\x01\x05\x44 spa music\x05\x41\x08\x02!!!\x04"
-			"The president has been\nkidnapped by ninjas.\x04"
-			"Are you a bad enough dude to\nrescue him?";
 
-		char* text2 = "The \x05\x46president\x05\x41 has been\nkidnapped by ninjas.\x04"
-			"Are you a bad enough dude to\nrescue her?"
-			"...because she's\ngot\x08\x01 a \x08\x03\x05\x42GREAT\x06 ASSSS!!";
+		char* text = "The \x05\x46president\x05\x41 has been\nkidnapped by ninjas.\x04"
+			"Are you a bad enough dude to\nrescue her?";
 
-		char* text3 = "I'm sick of that other \x05\x46text\x05\x41.";
+		char* text2 = "I'm sick of that other \x05\x46text\x05\x41.";
 
-		char* text4 = "Rick: Not much, Bobby!\x04Just tryin' to solve this case.";
-		DialogueBox_AddText(text4);
+		DialogueBox_AddText(text);
 	}
 		
 

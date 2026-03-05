@@ -8,6 +8,14 @@
 static Model shadow;
 static Texture shadowTexture;
 
+//Just for testing.
+static Entity* player;
+
+void NPC_SetPlayer(Entity* e)
+{
+	player = e;
+}
+
 typedef enum
 {
 	ANIM_IDLE = 1,
@@ -30,6 +38,7 @@ typedef enum
 
 //TODO: create some sort of interactable object that's separate
 //from the npc so it can be reused for things like signs, doors,etc.
+//Maybe also create an actor object for cutscene-related stuff.
 typedef struct
 {
 	int id;
@@ -46,6 +55,17 @@ void NPC_CommonInit(void)
 	shadow.materials[0].maps[MATERIAL_MAP_ALBEDO].texture = shadowTexture;
 }
 
+void NPC_FacePosition(Entity* e, Vector3 target, float dt)
+{
+	Vector3 distVect = Vector3Subtract(target, e->transform.position);
+
+	float targetAngle = atan2f(distVect.x, distVect.z) * RAD2DEG - e->transform.rotation.y;
+	targetAngle = (int)(targetAngle + 180) % 360 - 180;
+
+	e->transform.rotation.y += targetAngle * dt * 15;
+
+}
+
 static void NPC_Update(Entity* e, float dt)
 {
 	NPC_Data* npc = (NPC_Data*) e->data;
@@ -57,6 +77,7 @@ static void NPC_Update(Entity* e, float dt)
 		case NPC_STATE_MOVE:
 			break;
 		case NPC_STATE_SPEAK:
+			NPC_FacePosition(e, player->transform.position, dt*0.3f);
 			CH_PlayAnimationByIndex(&npc->animController, ANIM_SPEAK);
 			if (CH_AnimationFinished(&npc->animController))
 				npc->npcState = NPC_STATE_IDLE;
@@ -71,8 +92,7 @@ void NPC_Interact(Entity* e)
 {
 	NPC_Data* npc = (NPC_Data*)e->data;
 	npc->npcState = NPC_STATE_SPEAK;
-	DialogueBox_AddText("The oooold shim sham!!!");
-	printf("Interaction triggered.\n");
+	DialogueBox_AddText("The ol' shim sham!!!");
 }
 
 static void NPC_Render(Entity* e)
