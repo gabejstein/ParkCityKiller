@@ -5,16 +5,32 @@
 #include "../system/animation.h"
 #include "../gui/dialogueBox.h"
 
-static Model shadow;
-static Texture shadowTexture;
 
-//Just for testing.
-static Entity* player;
-
-void NPC_SetPlayer(Entity* e)
+typedef struct
 {
-	player = e;
-}
+	NPC_DEF_TYPE type;
+	char* modelFile;
+	char* shortMsg;
+}NPC_Definition;
+
+//TODO: Might move this to its own file or something.
+static NPC_Definition npc_definitions[MAX_NPC_DEF] = {
+	[NPC_DEF_DEFAULT] = {
+		.type = NPC_DEF_DEFAULT,
+		.modelFile = "assets/models/Beautiful_Body_01_Gray.glb",
+		.shortMsg = "If you are reading this,\nyou did not specify an\nnpc type for me."
+	},
+	[NPC_DEF_ORANGE_GUY] = {
+		.type = NPC_DEF_ORANGE_GUY,
+		.modelFile = "assets/models/Beautiful_Body_01_Orange.glb",
+		.shortMsg = "I'm orange!"
+	},
+	[NPC_DEF_BLUE_GUY] = {
+		.type = NPC_DEF_ORANGE_GUY,
+		.modelFile = "assets/models/Beautiful_Body_01_Blue.glb",
+		.shortMsg = "I'm blue!"
+	}
+};
 
 typedef enum
 {
@@ -46,7 +62,14 @@ typedef struct
 	CH_AnimationController animController;
 	ANIM_STATE animState;
 	NPC_STATE npcState;
+	NPC_DEF_TYPE def;
 }NPC_Data;
+
+static Model shadow;
+static Texture shadowTexture;
+
+//Just for testing.
+static Entity* player;
 
 void NPC_CommonInit(void)
 {
@@ -92,7 +115,8 @@ void NPC_Interact(Entity* e)
 {
 	NPC_Data* npc = (NPC_Data*)e->data;
 	npc->npcState = NPC_STATE_SPEAK;
-	DialogueBox_AddText("The ol' shim sham!!!");
+	char* text = npc_definitions[npc->def].shortMsg;
+	DialogueBox_AddText(text);
 }
 
 static void NPC_Render(Entity* e)
@@ -115,12 +139,12 @@ static void NPC_Unload(Entity* e)
 	free(e->data);
 }
 
-void NPC_New(Entity* e, Vector3 pos, float rot)
+void NPC_New(Entity* e, Vector3 pos, float rot, NPC_DEF_TYPE def)
 {
 	e->transform.position = pos;
 	e->transform.rotation.y = rot;
 	e->tag = ET_NPC;
-	e->model = RES_LoadModel("assets/models/Beautiful_Body_01_Blue.glb");
+	e->model = RES_LoadModel(npc_definitions[def].modelFile);
 	e->render = NPC_Render;
 	e->update = NPC_Update;
 	e->unload = NPC_Unload;
@@ -135,6 +159,7 @@ void NPC_New(Entity* e, Vector3 pos, float rot)
 	NPC_Data* data = (NPC_Data*)malloc(sizeof(NPC_Data));
 	memset(data, 0, sizeof(NPC_Data));
 
+	data->def = def;
 	data->headPos = (Vector3){ 0,1.5,0 };
 	CH_LoadAnimationController(&data->animController, "assets/models/Beautiful_Body_01_Blue.glb");
 	CH_SetClipLoopIndex(&data->animController, ANIM_IDLE, 1);
@@ -147,3 +172,7 @@ void NPC_New(Entity* e, Vector3 pos, float rot)
 	e->data = data;
 }
 
+void NPC_SetPlayer(Entity* e)
+{
+	player = e;
+}

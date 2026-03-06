@@ -3,12 +3,13 @@
 #This script will read all objects in that collection with a custom data property of 'class'
 #This is mostly experimental right now, so use with caution.
 
-#TODO: Create a magic number
 #TODO: Add other meta-data like model filename, music, etc.
 
 import bpy
 import os
 import struct
+
+magicNum = 0x48534F42 #B-O-S-H
 
 baseDir = os.path.dirname(bpy.data.filepath)
 
@@ -26,6 +27,7 @@ print(str(entityCount) + " entities found!")
 
 file = open(fileName,"wb")
 
+file.write(struct.pack('I',magicNum))
 file.write(struct.pack('I',entityCount))
 
 for obj in entityCollection.objects:
@@ -40,8 +42,8 @@ for obj in entityCollection.objects:
         file.write(struct.pack('f',obj.location[1]*-1))
         
         #rotation
-        file.write(struct.pack('f',obj.rotation_euler[2]))
+        file.write(struct.pack('f',obj.rotation_euler[2])) #exports in radians
         
 file.close()
 
-print("Entity file successfully saved!")
+print("Entity file successfully created!")

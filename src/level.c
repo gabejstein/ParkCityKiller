@@ -8,8 +8,11 @@
 #include "entity/npc.h"
 #include "const.h"
 
+#define MAGIC_NUMBER 0x48534F42 //B-O-S-H
+
 static void LoadEntities(Level* level, const char* filepath)
 {
+	unsigned int magicNum;
 	unsigned int entityCount = 0;
 	char nameBuffer[128];
 	unsigned int nameBufferCount;
@@ -18,6 +21,9 @@ static void LoadEntities(Level* level, const char* filepath)
 
 	FILE* f = fopen(filepath, "rb");
 	if (!f) { printf("Could not open level file: %s\n", filepath); return; }
+
+	fread(&magicNum, 4, 1, f);
+	if (magicNum != MAGIC_NUMBER){ printf("Not a valid level file."); return;}
 
 	fread(&entityCount, 4, 1, f);
 	printf("Entities found in file: %d\n", entityCount);
@@ -36,7 +42,7 @@ static void LoadEntities(Level* level, const char* filepath)
 
 		if (strcmp(nameBuffer, "npc") == 0)
 		{
-			NPC_New(NewEntity(), position, rotY*RAD2DEG+90); //TODO: need to include yaw rotation.
+			NPC_New(NewEntity(), position, rotY*RAD2DEG+90,0); //TODO: Need to save npc def as well.
 		}
 	}
 
@@ -59,10 +65,10 @@ static void LoadOverworld(Level* level)
 	Player_New(level->player, (Vector3) { 4.0f, 3.0f, 4.0f });
 
 	Entity* npc1 = NewEntity();
-	NPC_New(npc1, (Vector3) { -0.98f, 0.1f, 22.8f }, 0);
+	NPC_New(npc1, (Vector3) { -0.98f, 0.1f, 22.8f }, 0,NPC_DEF_ORANGE_GUY);
 
 	Entity* npc2 = NewEntity();
-	NPC_New(npc2, (Vector3) { 18.13f, 0.1f, 6.38f }, -90);
+	NPC_New(npc2, (Vector3) { 18.13f, 0.1f, 6.38f }, -90, NPC_DEF_BLUE_GUY);
 
 	level->portalCount = 1;
 	level->portals = (LevelPortal*) malloc(sizeof(LevelPortal) * level->portalCount);
