@@ -88,18 +88,6 @@ static void PlayState_Start(void)
 
 	ResetMsgBox();
 
-	//just for testing purposes. delete later.
-	//SpawnEnemy((Vector3) { 40, 0, -10 });
-
-	for (int i = 0; i < 15; i++)
-	{
-		Vector3 pos;
-		pos.x = GetRandomValue(-130, 260);
-		pos.y = 0;
-		pos.z = GetRandomValue(-176, 158);
-		SpawnRandomPickup(pos);
-	}
-
 	Level_Load(gGame.curLevel);
 
 	player = gGame.curLevel->player;

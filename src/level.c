@@ -8,6 +8,41 @@
 #include "entity/npc.h"
 #include "const.h"
 
+static void LoadEntities(Level* level, const char* filepath)
+{
+	unsigned int entityCount = 0;
+	char nameBuffer[128];
+	unsigned int nameBufferCount;
+	Vector3 position;
+	float rotY=0;
+
+	FILE* f = fopen(filepath, "rb");
+	if (!f) { printf("Could not open level file: %s\n", filepath); return; }
+
+	fread(&entityCount, 4, 1, f);
+	printf("Entities found in file: %d\n", entityCount);
+
+	for (int i = 0; i < entityCount; i++)
+	{
+		fread(&nameBufferCount, 4, 1, f);
+		fread(nameBuffer, 1, nameBufferCount, f);
+		nameBuffer[nameBufferCount] = '\0';
+		printf("Found class of type: %s\n", nameBuffer);
+		
+		fread(&position, sizeof(Vector3), 1, f);
+		printf("Position: %f %f %f\n", position.x, position.y, position.z);
+
+		fread(&rotY, 4, 1, f);
+
+		if (strcmp(nameBuffer, "npc") == 0)
+		{
+			NPC_New(NewEntity(), position, rotY*RAD2DEG+90); //TODO: need to include yaw rotation.
+		}
+	}
+
+	fclose(f);
+}
+
 //These will just be used with function pointers to load entities and other values temporarily.
 //Eventually level data should be loaded from files.
 static void LoadOverworld(Level* level)
@@ -17,6 +52,8 @@ static void LoadOverworld(Level* level)
 	level->collisionModel = level->model;
 
 	level->background = RES_LoadTexture("assets/textures/skybox_03.png");
+
+	LoadEntities(level, "assets/levels/test.edata");
 
 	level->player = NewEntity();
 	Player_New(level->player, (Vector3) { 4.0f, 3.0f, 4.0f });
@@ -59,6 +96,19 @@ static void LoadOverworld(Level* level)
 		.pos = (Vector3){42.7f,5.1f,-43.35f},
 		.rotY = 0
 	};
+
+	//just for testing purposes. delete later.
+	//SpawnEnemy((Vector3) { 40, 0, -10 });
+
+	//Random pickups.
+	for (int i = 0; i < 15; i++)
+	{
+		Vector3 pos;
+		pos.x = GetRandomValue(-130, 260);
+		pos.y = 0;
+		pos.z = GetRandomValue(-176, 158);
+		SpawnRandomPickup(pos);
+	}
 }
 
 static void LoadHotel(Level* level)
