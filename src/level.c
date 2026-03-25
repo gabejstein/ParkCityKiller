@@ -58,6 +58,10 @@ static void LoadOverworld(Level* level)
 	level->collisionModel = level->model;
 
 	level->background = RES_LoadTexture("assets/textures/skybox_03.png");
+	level->music = RES_LoadSound("assets/music/apple_market.mp3");
+	//Note: there is a flaw in the resource handling here.
+	//Handles default to 0, but 0 can be the first item in the asset, so there's no way to check for null.
+	RES_PlaySound(level->music); 
 
 	LoadEntities(level, "assets/levels/test.edata");
 
@@ -115,6 +119,15 @@ static void LoadOverworld(Level* level)
 		pos.z = GetRandomValue(-176, 158);
 		SpawnRandomPickup(pos);
 	}
+
+	//Lighting
+	level->lighting = (LevelLighting)
+	{
+		.lightIntensity = 1.0f, //TODO: need to create a uniform
+		.skyType = SKY_STATIC_IMAGE,
+		.sunDirection = (Vector3){0.0f,1.0f,0.0f} //TODO: convert from eulers instead.
+	};
+	RES_SetShaderValues(level->lighting.sunDirection);
 }
 
 static void LoadHotel(Level* level)

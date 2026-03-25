@@ -9,6 +9,7 @@ typedef int ModelHandle;
 
 void RES_Init(void);
 void RES_UpdateShader(const Vector3* cameraPos, const Vector3* cameraDir);
+void RES_SetShaderValues(const Vector3 sunDir);
 SoundHandle RES_LoadSound(const char* fileName);
 void RES_PlaySound(const SoundHandle id);
 void RES_Unload(void);

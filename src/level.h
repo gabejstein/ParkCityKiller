@@ -28,6 +28,23 @@ typedef struct
 	float rotY;
 }SpawnPoint;
 
+typedef enum
+{
+	SKY_FLAT_COLOR,
+	SKY_STATIC_IMAGE,
+	SKY_SKYBOX
+}SKY_TYPE;
+
+typedef struct
+{
+	float lightIntensity;
+	Vector3 sunDirection;
+	float fogDensity;
+	Color fogColor;
+	SKY_TYPE skyType;
+	//TODO: union with either flat color or skybox struct
+}LevelLighting;
+
 //TODO: Level needs to be separated into a definition type and the object that's used at runtime.
 typedef struct
 {
@@ -37,12 +54,15 @@ typedef struct
 	ModelHandle model;
 	ModelHandle collisionModel;
 	TextureHandle background;
+	SoundHandle music;
 	void (*load)(struct Level*); //Note: may not need this, but could be useful if there's level-specific logic.
 	void (*unload)(struct Level*);
 	Entity* player;
 
 	int portalCount;
 	int spawnPointCount;
+
+	LevelLighting lighting;
 }Level;
 
 Level* Level_GetLevel(LEVEL_DEF_ID id);

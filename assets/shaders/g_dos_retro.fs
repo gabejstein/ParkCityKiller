@@ -3,8 +3,8 @@
 uniform vec4 baseColor;
 uniform sampler2D texture0;
 uniform vec3 cameraDir;
-
 uniform vec3 camPos; //used for fog
+uniform vec3 sunDir;
 
 in vec4 fragColor;
 in vec2 fragTexCoord;
@@ -13,14 +13,11 @@ in vec3 fragPos;
 
 out vec4 FragYou;
 
-vec3 lightDir;
-
 vec4 fogColor; //make uniform later
 float fogDensity;
 
 void main()
 {
-    lightDir = vec3(0,1.0,0.0);
     fogColor = vec4(0.4,0.4,0.4,1.0);
     fogDensity = 0.02;
 
@@ -35,7 +32,7 @@ void main()
     //FragYou = texelColor * fragColor;
     //FragYou = baseColor;
 
-    float ambientAmount = max(dot(normalize(lightDir),normalize(fragNormal)),0.8);
+    float ambientAmount = max(dot(normalize(sunDir),normalize(fragNormal)),0.8);
     float lightAmount = max(dot(normalize(cameraDir),normalize(fragNormal)),0.4); //should try mixing with light source to light ground better
     float finalLight = ambientAmount * lightAmount;
 

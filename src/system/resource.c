@@ -48,6 +48,7 @@ ResourceManager gResourceManager;
 static Shader shader;
 static unsigned int cameraDirLoc;
 static unsigned int cameraPosLoc;
+static unsigned int sunDirLoc;
 
 static void RES_LoadShader(void);
 static void UnloadSounds(void);
@@ -59,6 +60,12 @@ static void SetupModelMaterial(Model* m);
 void RES_Init(void)
 {
 	RES_LoadShader();
+}
+
+
+void RES_SetShaderValues(const Vector3 sunDir)
+{
+	SetShaderValue(shader, sunDirLoc, (float[3]) { sunDir.x, sunDir.y, sunDir.z }, SHADER_UNIFORM_VEC3);
 }
 
 void RES_UpdateShader(const Vector3* cameraPos, const Vector3 *cameraDir)
@@ -82,6 +89,7 @@ static void RES_LoadShader(void)
 	shader = LoadShader("assets/shaders/g_dos_retro.vs", "assets/shaders/g_dos_retro.fs");
 	cameraDirLoc = GetShaderLocation(shader, "cameraDir");
 	cameraPosLoc = GetShaderLocation(shader, "camPos");
+	sunDirLoc = GetShaderLocation(shader, "sunDir");
 }
 
 SoundHandle RES_LoadSound(const char* fileName)

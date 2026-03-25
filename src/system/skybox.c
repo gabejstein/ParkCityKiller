@@ -8,7 +8,7 @@ static Model skyBox = { 0 };
 static unsigned int moveLoc;
 static float skyRot = 0.0f;
 
-void InitSkybox(void)
+void Skybox_Init(void)
 {
 	skyShader = LoadShader("assets/shaders/skybox.vs", "assets/shaders/skybox.fs");
 	moveLoc = GetShaderLocation(skyShader, "movement");
@@ -19,24 +19,24 @@ void InitSkybox(void)
 	skyBox.materials[0].shader = skyShader;
 	SetShaderValue(skyBox.materials[0].shader, GetShaderLocation(skyBox.materials[0].shader, "environmentMap"), (int[1]) { MATERIAL_MAP_CUBEMAP }, SHADER_UNIFORM_INT);
 
-	Image img = LoadImage("assets/textures/skybox_02.png");
+	Image img = LoadImage("assets/textures/skybox_01.png");
 	skyBox.materials[0].maps[MATERIAL_MAP_CUBEMAP].texture = LoadTextureCubemap(img, CUBEMAP_LAYOUT_LINE_HORIZONTAL);
 	SetTextureFilter(skyBox.materials[0].maps[MATERIAL_MAP_CUBEMAP].texture, TEXTURE_FILTER_POINT);
 	UnloadImage(img);
 }
 
-void UnloadSkybox(void)
+void Skybox_Unload(void)
 {
 	UnloadModel(skyBox);
 	UnloadShader(skyShader);
 }
 
-void UpdateSkybox(Camera* camera, float dt)
+void Skybox_Update(Camera* camera, float dt)
 {
-	skyRot += 2.0f * dt;
+	skyRot += 1.0f * dt;
 }
 
-void DrawSkyBox(void)
+void Skybox_Draw(void)
 {
 	//SetShaderValue(skyShader, moveLoc, (float[3]) { 0.0, skyRot, 0.0 }, SHADER_UNIFORM_VEC3);
 

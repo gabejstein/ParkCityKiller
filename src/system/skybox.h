@@ -3,9 +3,9 @@
 
 #include <raylib.h>
 
-void InitSkybox(void);
-void UnloadSkybox(void);
-void UpdateSkybox(Camera* camera, float dt);
-void DrawSkyBox(void);
+void Skybox_Init(void);
+void Skybox_Unload(void);
+void Skybox_Update(Camera* camera, float dt);
+void Skybox_Draw(void);
 
 #endif

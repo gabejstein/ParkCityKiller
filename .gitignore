@@ -5,6 +5,7 @@ x64/
 assets/models/ignore/
 assets/fonts/
 assets/sounds/ignore/
+assets/music/
 
 #Ignore common Visual Studio and build artifacts
 
