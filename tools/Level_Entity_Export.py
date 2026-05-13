@@ -9,19 +9,34 @@ import bpy
 import os
 import struct
 
+def WriteVec3(file,v):
+    file.write(struct.pack('f',v[0]))
+    file.write(struct.pack('f',v[2]))
+    file.write(struct.pack('f',v[1]))
+    
+def WriteString(file,s):
+    file.write(s.encode('utf-8'))
+
 magicNum = 0x48534F42 #B-O-S-H
 
 baseDir = os.path.dirname(bpy.data.filepath)
 
-fileName = baseDir+"\\test.edata"
+fileExt = ".level"
+
+levelName = "default"
 
 entityCollection = bpy.data.collections["Entity"]
 
 entityCount = 0
 
 for obj in entityCollection.objects:
-    if(obj["class"]):
+    if "class" in obj:
         entityCount +=1
+    if obj.name=="meta_data":
+        levelName = obj["level_name"]     
+        
+fileName = baseDir+"\\"+levelName+fileExt
+        
         
 print(str(entityCount) + " entities found!")
 
@@ -31,7 +46,7 @@ file.write(struct.pack('I',magicNum))
 file.write(struct.pack('I',entityCount))
 
 for obj in entityCollection.objects:
-    if(obj["class"]):
+    if "class" in obj:
         file.write(struct.pack('I',len(obj["class"])))
         data = obj["class"].encode('utf-8')
         file.write(data)
@@ -43,6 +58,20 @@ for obj in entityCollection.objects:
         
         #rotation
         file.write(struct.pack('f',obj.rotation_euler[2])) #exports in radians
+        
+        #special data
+        if obj["class"]=="npc":
+            WriteString(file,"blue_guy")
+        elif obj["class"]=="spawn_point":
+            if obj["id"]==None:
+                print("Spawn point has no id.")
+                break
+            WriteString(file,obj["id"])
+        elif obj["class"]=="portal":
+            WriteString(file,obj["level_id"])
+            WriteString(file,obj["spawn_id"])
+            WriteVec3(file,obj.dimensions) #bounding box
+            
         
 file.close()
 
