@@ -4,14 +4,24 @@
 import bpy
 import os
 
-levelName = 'hotel'
+levelName = 'inagi_town'
 exportDir = './export'
 
 baseDir = os.path.dirname(bpy.data.filepath)
 
 bpy.ops.wm.save_mainfile()
 
+#TODO: apply all modifiers. Maybe it can be done in export.
+
 bpy.ops.object.select_all(action='SELECT')
+
+selected_objs = bpy.context.selected_objects
+
+#apply all modifiers #currently wont work because of shared data
+#for obj in selected_objs:
+    #bpy.context.view_layer.objects.active = obj
+    #for modifier in obj.modifiers:
+        #bpy.ops.object.modifier_apply(modifier=modifier.name)
 
 bpy.ops.object.join()
 

@@ -31,56 +31,70 @@ entityCollection = bpy.data.collections["Entity"]
 entityCount = 0
 spawnPointCount = 0
 portalCount = 0
+billboardCount = 0
 
-#Preprocessing pass
+portalsList = [obj for obj in entityCollection.objects if "portal" in obj] #gets a list of portals
+portalCount = len(portalsList)
+print("Portal Count: "+str(portalCount))
+
+entitiesList = [obj for obj in entityCollection.objects if "class" in obj]
+entityCount = len(entitiesList)
+print(str(entityCount) + " entities found!")
+
+spawnPointList = [obj for obj in entityCollection.objects if "spawn_point" in obj]
+spawnPointCount = len(spawnPointList)
+print("Spawn Points Found: "+str(spawnPointCount))
+
+billboardList = [obj for obj in entityCollection.objects if "billboard" in obj]
+billboardCount = len(billboardList)
+
+#Get meta data
 for obj in entityCollection.objects:
-    if "class" in obj:
-        entityCount +=1
-        if obj["class"]=="portal":
-            portalCount +=1
-        elif obj["class"]=="spawn_point":
-            spawnPointCount +=1
     if obj.name=="meta_data":
         levelName = obj["level_name"]     
         
 fileName = baseDir+"\\"+levelName+fileExt
-        
-        
-print(str(entityCount) + " entities found!")
 
 file = open(fileName,"wb")
 
+#header info
 file.write(struct.pack('I',magicNum))
 file.write(struct.pack('I',entityCount))
 file.write(struct.pack('I',portalCount))
 file.write(struct.pack('I',spawnPointCount))
+file.write(struct.pack('I',billboardCount))
 
+#save portals
+for obj in portalsList:
+    WriteString(file,obj["portal"]) #level id
+    WriteString(file,obj["spawn_id"])
+    WriteVec3(file,obj.dimensions) #bounding box
+    
+for obj in spawnPointList:
+    WriteString(file,obj["spawn_point"]) #id string
+    WriteVec3(file,obj.location)
+    file.write(struct.pack('f',obj.rotation_euler[2])) #exports in radians
+    
+for obj in billboardList:
+    file.write(struct.pack('I',obj["billboard"])) #billboard type
+    WriteVec3(file,obj.location)
 
-for obj in entityCollection.objects:
-    if "class" in obj:
-        #save the actual type of object
-        WriteString(file,obj["class"]) 
-        
-        #position
-        file.write(struct.pack('f',obj.location[0]))
-        file.write(struct.pack('f',obj.location[2])) #Changing the order for Raylib
-        file.write(struct.pack('f',obj.location[1]*-1))
-        
-        #rotation
-        file.write(struct.pack('f',obj.rotation_euler[2])) #exports in radians
-        
-        #special data
-        if obj["class"]=="npc":
-            WriteString(file,"blue_guy")
-        elif obj["class"]=="spawn_point":
-            if "id" not in obj:
-                print("Spawn point has no id.")
-                break
-            WriteString(file,obj["id"])
-        elif obj["class"]=="portal":
-            WriteString(file,obj["level_id"])
-            WriteString(file,obj["spawn_id"])
-            WriteVec3(file,obj.dimensions) #bounding box
+for obj in entitiesList:
+    #save the actual type of object
+    WriteString(file,obj["class"]) 
+    
+    #position
+    file.write(struct.pack('f',obj.location[0]))
+    file.write(struct.pack('f',obj.location[2])) #Changing the order for Raylib
+    file.write(struct.pack('f',obj.location[1]*-1))
+    
+    #rotation
+    file.write(struct.pack('f',obj.rotation_euler[2])) #exports in radians
+    
+    #special data
+    if obj["class"]=="npc":
+        WriteString(file,obj["npc_type"])
+       
             
         
 file.close()
