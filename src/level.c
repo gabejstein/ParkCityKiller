@@ -430,13 +430,16 @@ void Level_Render(Level* level)
 
 void Level_SetNext(char* levelName, char* spawnId)
 {
-	//TODO: do this the same way as below.
-	strcpy(gGame.nextLevel, levelName);
+	//Copy level name
+	char* p = levelName;
+	char* out = gGame.nextLevel;
+	while ((*out++ = *p++));
 
 	if (!spawnId)return;
 
-	char* p = spawnId;
-	char* out = gGame.nextSpawn;
+	//Copy spawn name
+	p = spawnId;
+	out = gGame.nextSpawn;
 	while ((*out++ = *p++));
 }
 
