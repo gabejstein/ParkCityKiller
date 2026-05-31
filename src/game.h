@@ -65,7 +65,7 @@ typedef struct
     int bRunning;
     PlayerStats playerStats;
     Level* curLevel;
-    LEVEL_DEF_ID nextLevel;
+    char nextLevel[256];
     char nextSpawn[256];
 }Game;
 

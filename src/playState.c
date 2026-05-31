@@ -88,7 +88,7 @@ static void PlayState_Start(void)
 
 	ResetMsgBox();
 
-	Level_Load(gGame.curLevel);
+	Level_Load(gGame.nextLevel);
 
 	player = gGame.curLevel->player;
 	startPos = player->transform.position;
@@ -206,8 +206,6 @@ static void PlayState_Update(float dt)
 static void PlayState_Render(void)
 {
 	ClearBackground(bgColor);
-
-	RES_DrawTexture(gGame.curLevel->background, 0, 0);
 
 	BeginMode3D(camera);
 

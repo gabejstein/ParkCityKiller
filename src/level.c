@@ -10,76 +10,25 @@
 
 #define MAGIC_NUMBER 0x48534F42 //B-O-S-H
 
-static void LoadEntities(Level* level, const char* filepath)
-{
-	unsigned int magicNum;
-	unsigned int entityCount = 0;
-	char nameBuffer[128];
-	unsigned int nameBufferCount;
-	Vector3 position;
-	float rotY=0;
-
-	FILE* f = fopen(filepath, "rb");
-	if (!f) { printf("Could not open level file: %s\n", filepath); return; }
-
-	fread(&magicNum, 4, 1, f);
-	if (magicNum != MAGIC_NUMBER){ printf("Not a valid level file."); return;}
-
-	fread(&entityCount, 4, 1, f);
-	printf("Entities found in file: %d\n", entityCount);
-
-	for (int i = 0; i < entityCount; i++)
-	{
-		fread(&nameBufferCount, 4, 1, f);
-		fread(nameBuffer, 1, nameBufferCount, f);
-		nameBuffer[nameBufferCount] = '\0';
-		printf("Found class of type: %s\n", nameBuffer);
-		
-		fread(&position, sizeof(Vector3), 1, f);
-		printf("Position: %f %f %f\n", position.x, position.y, position.z);
-
-		fread(&rotY, 4, 1, f);
-
-		if (strcmp(nameBuffer, "npc") == 0)
-		{
-			NPC_New(NewEntity(), position, rotY*RAD2DEG+90,0); //TODO: Need to save npc def as well.
-		}
-	}
-
-	fclose(f);
-}
-
-//These will just be used with function pointers to load entities and other values temporarily.
-//Eventually level data should be loaded from files.
 static void LoadOverworld(Level* level)
 {
 	printf("Loading Overworld\n");
-	level->model = RES_LoadModel("assets/models/super_mega_world4.glb");
-	level->collisionModel = level->model;
-
-	level->background = RES_LoadTexture("assets/textures/skybox_03.png");
-	level->music = RES_LoadSound("assets/music/apple_market.mp3");
-	//Note: there is a flaw in the resource handling here.
-	//Handles default to 0, but 0 can be the first item in the asset, so there's no way to check for null.
-	RES_PlaySound(level->music); 
-
-	LoadEntities(level, "assets/levels/test.edata");
 
 	level->player = NewEntity();
 	Player_New(level->player, (Vector3) { 4.0f, 3.0f, 4.0f });
 
 	Entity* npc1 = NewEntity();
-	NPC_New(npc1, (Vector3) { -0.98f, 0.1f, 22.8f }, 0,NPC_DEF_ORANGE_GUY);
+	NPC_New(npc1, (Vector3) { -0.98f, 0.1f, 22.8f }, 0, NPC_DEF_ORANGE_GUY);
 
 	Entity* npc2 = NewEntity();
 	NPC_New(npc2, (Vector3) { 18.13f, 0.1f, 6.38f }, -90, NPC_DEF_BLUE_GUY);
 
 	level->portalCount = 1;
-	level->portals = (LevelPortal*) malloc(sizeof(LevelPortal) * level->portalCount);
-	memset(level->portals, 0, sizeof(LevelPortal)* level->portalCount);
+	level->portals = (LevelPortal*)malloc(sizeof(LevelPortal) * level->portalCount);
+	memset(level->portals, 0, sizeof(LevelPortal) * level->portalCount);
 
 	level->portals[0] = (LevelPortal){
-		.levelId = LEVEL_HOTEL,
+		.levelName = "hotel",
 		.position = (Vector3){42.8f,5.0f,-46.89f},
 		.size = (Vector3){5,5,5},
 		.spawnId = "lobby"
@@ -99,16 +48,13 @@ static void LoadOverworld(Level* level)
 
 	level->spawnPointCount = 1;
 	level->spawnPoints = (SpawnPoint*)malloc(sizeof(SpawnPoint) * level->spawnPointCount);
-	memset(level->spawnPoints, 0, sizeof(SpawnPoint)* level->spawnPointCount);
+	memset(level->spawnPoints, 0, sizeof(SpawnPoint) * level->spawnPointCount);
 
-	level->spawnPoints[0] = (SpawnPoint) {
+	level->spawnPoints[0] = (SpawnPoint){
 		.id = "entrance",
 		.pos = (Vector3){42.7f,5.1f,-43.35f},
 		.rotY = 0
 	};
-
-	//just for testing purposes. delete later.
-	//SpawnEnemy((Vector3) { 40, 0, -10 });
 
 	//Random pickups.
 	for (int i = 0; i < 15; i++)
@@ -120,32 +66,20 @@ static void LoadOverworld(Level* level)
 		SpawnRandomPickup(pos);
 	}
 
-	//Lighting
-	level->lighting = (LevelLighting)
-	{
-		.lightIntensity = 1.0f, //TODO: need to create a uniform
-		.skyType = SKY_STATIC_IMAGE,
-		.sunDirection = (Vector3){0.0f,1.0f,0.0f} //TODO: convert from eulers instead.
-	};
-	RES_SetShaderValues(level->lighting.sunDirection);
 }
 
 static void LoadHotel(Level* level)
 {
 	printf("Loading Hotel");
-	level->model = RES_LoadModel("assets/models/hotel_01.glb");
-	level->collisionModel = level->model;
-
-	level->background = RES_LoadTexture("assets/textures/skybox_hotel_test.png");
 
 	level->player = NewEntity();
 	Player_New(level->player, (Vector3) { 0.0f, 0.0f, 0.0f });
 
 	level->spawnPointCount = 2;
-	level->spawnPoints = (SpawnPoint*) malloc(sizeof(SpawnPoint) * level->spawnPointCount);
-	memset(level->spawnPoints, 0, sizeof(SpawnPoint)* level->spawnPointCount);
+	level->spawnPoints = (SpawnPoint*)malloc(sizeof(SpawnPoint) * level->spawnPointCount);
+	memset(level->spawnPoints, 0, sizeof(SpawnPoint) * level->spawnPointCount);
 
-	level->spawnPoints[0] = (SpawnPoint) {
+	level->spawnPoints[0] = (SpawnPoint){
 		.id = "lobby",
 		.pos = (Vector3){0,0,0},
 		.rotY = 0
@@ -159,10 +93,10 @@ static void LoadHotel(Level* level)
 
 	level->portalCount = 1;
 	level->portals = (LevelPortal*)malloc(sizeof(LevelPortal) * level->portalCount);
-	memset(level->portals, 0, sizeof(LevelPortal)* level->portalCount);
+	memset(level->portals, 0, sizeof(LevelPortal) * level->portalCount);
 
 	level->portals[0] = (LevelPortal){
-		.levelId = LEVEL_OVERWORLD,
+		.levelName = "overworld",
 		.position = (Vector3){0.49f,0.1f,5.45f},
 		.size = (Vector3){3,3,3},
 		.spawnId = "entrance"
@@ -179,45 +113,262 @@ static void LoadHotel(Level* level)
 			level->portals[0].position.x + level->portals[0].size.x / 2,level->portals[0].position.y + level->portals[0].size.y,level->portals[0].position.z + level->portals[0].size.z / 2
 		}
 	};
-	
+
 }
 
-//This really shouldn't be an array of Levels, but LevelDefinitions
-static Level levelDB[MAX_LEVELS] = {
-	[LEVEL_OVERWORLD] = {
-		.load = LoadOverworld,
-		.unload = NULL
+LevelLighting levelLightDefs[LIGHTING_MAX] =
+{
+	[LIGHTING_DAYTIME] = {
+		.fogColor = {122,112,102,255},
+		.fogDensity = 0.002f,
+		.lightColor = {255,255,240,255},
+		.skyType = SKY_SKYBOX,
+		.skyTexturePath = "assets/textures/skybox_01.png",
+		.sunDirection = {0.5f,1.0f,0.5f} //TODO: convert from eulers instead.
 	},
-	[LEVEL_HOTEL] = {
-		.load = LoadHotel,
-		.unload = NULL
+	[LIGHTING_NIGHT] = {
+		.fogColor = {52,42,90,255},
+		.fogDensity = 0.002f,
+		.lightColor = {120,100,190,255},
+		.skyType = SKY_SKYBOX,
+		.skyTexturePath = "assets/textures/skybox_night_01.png",
+		.sunDirection = {0.5f,1.0f,0.5f} //TODO: convert from eulers instead.
+	},
+	[LIGHTING_SUNSET] = {
+		.fogColor = {52,42,90,255},
+		.fogDensity = 0.002f,
+		.lightColor = {255,130,90,255},
+		.skyType = SKY_SKYBOX,
+		.skyTexturePath = "assets/textures/skybox_night_01.png",
+		.sunDirection = {0.5f,1.0f,0.5f} //TODO: convert from eulers instead.
 	}
 };
 
-Level* Level_GetLevel(LEVEL_DEF_ID id)
+LevelDef levelDefs[] = {
+	{
+		.id = "overworld",
+		.name = "Mega City",
+		.filePath = "assets/levels/overworld.level",
+		.modelPath = "assets/models/levels/super_mega_world4.glb",
+		.collisionModelPath = NULL,
+		.lightingType = LIGHTING_DAYTIME,
+		.musicPath = NULL,
+		.onStart = NULL,
+		.onUpdate = NULL
+	},
+	{
+		.id = "hotel",
+		.name = "Hotel",
+		.filePath = NULL,
+		.modelPath = "assets/models/levels/hotel_01.glb",
+		.collisionModelPath = NULL,
+		.lightingType = LIGHTING_DAYTIME,
+		.musicPath = NULL,
+		.onStart = NULL,
+		.onUpdate = NULL
+	},
+	{
+		.id = "highway_01",
+		.name = "Highway",
+		.filePath = NULL,
+		.modelPath = "assets/models/levels/inagi_Corridor_01.glb.glb",
+		.collisionModelPath = NULL,
+		.lightingType = LIGHTING_NIGHT,
+		.musicPath = NULL,
+		.onStart = NULL,
+		.onUpdate = NULL
+	}
+};
+
+#define MAX_LEVEL_DEFS (sizeof(levelDefs)/sizeof(LevelDef))
+
+LevelDef* GetLevelDef(const char* id)
 {
-	if (id >= 0 && id < MAX_LEVELS)
-		return &levelDB[id];
+	for (int i = 0; i < MAX_LEVEL_DEFS; i++)
+	{
+		if (strcmp(levelDefs[i].id, id) == 0)
+			return &levelDefs[i];
+	}
+
+	return NULL;
 }
 
-void Level_Load(Level* level)
+static void MakePlayer(Level* level, Vector3 position)
+{
+	level->player = NewEntity();
+	Player_New(level->player, position);
+}
+
+static void Level_LoadLevelFile(Level* level, const char* filepath)
+{
+	if (!filepath)return;
+
+	typedef struct
+	{
+		uint32_t magicNum;
+		uint32_t entityCount;
+		uint32_t portalCount;
+		uint32_t spawnPointCount;
+		uint32_t billboardCount;
+	}LevelFileHeader;
+
+	LevelFileHeader header;
+	char nameBuffer[128];
+	uint32_t nameBufferCount;
+	Vector3 position;
+	float rotY = 0;
+
+	printf("Loading level file: %s\n", filepath);
+
+	FILE* f = fopen(filepath, "rb");
+	if (!f) { printf("Could not open level file: %s\n", filepath); return; }
+
+	fread(&header, sizeof(LevelFileHeader), 1, f);
+	if (header.magicNum != MAGIC_NUMBER) { printf("Not a valid level file."); return; }
+
+	printf("Level header:\n");
+	printf("\tEntity Count: %d\n", header.entityCount);
+	printf("\tPortal Count: %d\n", header.portalCount);
+	printf("\tSpawnpoint Count: %d\n", header.spawnPointCount);
+	printf("\tBillboard Count: %d\n", header.billboardCount);
+
+	level->portalCount = header.portalCount;
+	level->portals = (LevelPortal*)malloc(sizeof(LevelPortal) * level->portalCount);
+
+	level->spawnPointCount = header.spawnPointCount;
+	level->spawnPoints = (SpawnPoint*)malloc(sizeof(SpawnPoint) * level->spawnPointCount);
+
+	level->billboardCount = header.billboardCount;
+	level->billboards = (Billboard*)malloc(sizeof(Billboard) * level->billboardCount);
+
+	for (int i = 0; i < level->portalCount; i++)
+	{
+		fread(&nameBufferCount, 4, 1, f);
+		level->portals[i].levelName = (char*)malloc(nameBufferCount + 1);
+		fread(level->portals[i].levelName, nameBufferCount, 1, f);
+		level->portals[i].levelName[nameBufferCount] = '\0';
+
+		fread(&nameBufferCount, 4, 1, f);
+		level->portals[i].spawnId = (char*)malloc(nameBufferCount + 1);
+		fread(level->portals[i].spawnId, nameBufferCount, 1, f);
+		level->portals[i].spawnId[nameBufferCount] = '\0';
+
+		fread(&level->portals[i].position, 4, 3, f);
+		fread(&level->portals[i].size, 4, 3, f);
+
+		level->portals[i].box = (BoundingBox)
+		{
+			(Vector3)
+			{
+				level->portals[i].position.x - level->portals[i].size.x / 2,level->portals[i].position.y,level->portals[i].position.z - level->portals[i].size.z / 2
+			},
+			(Vector3)
+			{
+				level->portals[i].position.x + level->portals[i].size.x / 2,level->portals[i].position.y + level->portals[i].size.y,level->portals[i].position.z + level->portals[i].size.z / 2
+			}
+		};
+	}
+
+	SpawnPoint* lastSpawnPoint = level->spawnPoints + level->spawnPointCount;
+
+	for (SpawnPoint* cur = level->spawnPoints; cur < lastSpawnPoint; cur++)
+	{
+		fread(&nameBufferCount, 4, 1, f);
+		cur->id = (char*)malloc(nameBufferCount + 1);
+		fread(cur->id, nameBufferCount, 1, f);
+		cur->id[nameBufferCount] = '\0';
+
+		fread(&cur->pos, sizeof(Vector3), 1, f);
+		fread(&cur->rotY, 4, 1, f);
+	}
+
+	Billboard* lastBillboard = level->billboards + level->billboardCount;
+
+	for (Billboard* cur = level->billboards; cur < lastBillboard; cur++)
+	{
+		uint32_t bType;
+		fread(&bType, 4, 1, f);
+		fread(&cur, sizeof(Vector3), 1, f);
+	}
+
+	for (int i = 0; i < header.entityCount; i++)
+	{
+		fread(&nameBufferCount, 4, 1, f);
+		fread(nameBuffer, 1, nameBufferCount, f);
+		nameBuffer[nameBufferCount] = '\0';
+		printf("Found class of type: %s\n", nameBuffer);
+
+		fread(&position, sizeof(Vector3), 1, f);
+		printf("Position: %f %f %f\n", position.x, position.y, position.z);
+
+		fread(&rotY, 4, 1, f);
+		printf("Rotation: %f\n", rotY);
+
+		if (strcmp(nameBuffer, "npc") == 0)
+		{
+			fread(&nameBufferCount, 4, 1, f);
+			fread(nameBuffer, 1, nameBufferCount, f);
+			nameBuffer[nameBufferCount] = '\0';
+			if (strcmp(nameBuffer, "blue_guy") == 0) //TODO: currently doesnt actually set blue guy
+				NPC_New(NewEntity(), position, rotY * RAD2DEG + 90, 0);
+		}
+
+	}
+
+	fclose(f);
+
+	printf("Level File: %s successfully loaded.\n", filepath);
+}
+
+void Level_Load(const char* id)
 {
 	printf("Loading Level\n");
-	//Currently using a callback until a file format has been worked out.
-	//May still use it for scripted logic.
-	if (level->load)
-		level->load(level);
 
-	SpawnPoint* end = level->spawnPoints + level->spawnPointCount;
-	for (SpawnPoint* cur = level->spawnPoints; cur < end; cur++)
+	LevelDef* levelDef = GetLevelDef(id);
+	if (!levelDef) {
+		printf("Could not find level in database.\n");
+		exit(1);
+	}
+
+	gGame.curLevel = (Level*)malloc(sizeof(Level));
+	memset(gGame.curLevel, 0, sizeof(Level));
+
+	Level_LoadLevelFile(gGame.curLevel, levelDef->filePath);
+
+	//TODO: The following needs to be loaded as well, but I'm hardcoding it for now.
+	gGame.curLevel->model = RES_LoadModel(levelDef->modelPath);
+	if (!levelDef->collisionModelPath)
+		gGame.curLevel->collisionModel = gGame.curLevel->model;
+	else
+		gGame.curLevel->collisionModel = levelDef->collisionModelPath;
+
+	gGame.curLevel->lighting = levelLightDefs[levelDef->lightingType];
+	//RES_SetShaderValues(gGame.curLevel->lighting.fogDensity, gGame.curLevel->lighting.fogColor, gGame.curLevel->lighting.sunDirection, gGame.curLevel->lighting.lightColor);
+	MakePlayer(gGame.curLevel, (Vector3) { 4.0f, 5.0f, 4.0f });
+
+	gGame.curLevel->onStart = levelDef->onStart;
+	gGame.curLevel->onUpdate = levelDef->onUpdate;
+
+	//level->music = LoadMusicStream("assets/music/apple_market.mp3");
+	//level->music.looping = true;
+	//Note: there is a flaw in the resource handling here.
+	//Handles default to 0, but 0 can be the first item in the asset, so there's no way to check for null.
+	//PlayMusicStream(level->music); 
+
+	//Position player at spawnpoint
+	SpawnPoint* end = gGame.curLevel->spawnPoints + gGame.curLevel->spawnPointCount;
+	for (SpawnPoint* cur = gGame.curLevel->spawnPoints; cur < end; cur++)
 	{
 		if (strcmp(gGame.nextSpawn, cur->id) == 0)
 		{
-			level->player->transform.position = cur->pos;
-			level->player->transform.rotation.y = cur->rotY;
+			gGame.curLevel->player->transform.position = cur->pos;
+			gGame.curLevel->player->transform.rotation.y = cur->rotY;
 			break;
 		}
 	}
+
+	gGame.nextLevel[0] = '\0';
+	gGame.nextSpawn[0] = '\0';
 
 	printf("Level Load Complete\n");
 }
@@ -227,34 +378,60 @@ void Level_Unload(Level* level)
 	if (level->unload)
 		level->unload(level);
 
-	if (level->portalCount)
-	{		
-		free(level->portals);
-	}
-		
-	if (level->spawnPointCount)
+	for (int i = 0; i < level->portalCount; i++)
 	{
-		free(level->spawnPoints);
+		free(level->portals[i].levelName);
+		free(level->portals[i].spawnId);
 	}
-		
+
+	free(level->portals);
+
+	for (int i = 0; i < level->spawnPointCount; i++)
+		free(level->spawnPoints[i].id);
+
+	free(level->spawnPoints);
+
+	free(level->billboards);
+
+	free(level);
+	level = NULL;
+
 }
 
 void Level_Update(Level* level, float dt)
 {
+	if (level->onUpdate)
+		level->onUpdate(level, NULL);
+
+	//UpdateMusicStream(level->music);
 	//Check to see if player should warp.
 	for (int i = 0; i < level->portalCount; i++)
 	{
 		LevelPortal* portal = &level->portals[i];
 		if (CheckPointInBox(&level->player->transform.position, &portal->box))
 		{
-			Level_SetNext(portal->levelId, portal->spawnId);
+			Level_SetNext(portal->levelName, portal->spawnId);
 		}
 	}
 }
 
-void Level_SetNext(LEVEL_DEF_ID levelId, char* spawnId)
+void Level_Render(Level* level)
 {
-	gGame.nextLevel = levelId;
+	RES_DrawModel(level->model, (Vector3) { 0, 0, 0 }, 1);
+
+	Texture texture;
+	for (int i = 0; i < level->billboardCount; i++)
+	{
+		Billboard b = level->billboards[i];
+		//DrawBillboard(*gGame.mainCamera.camera, texture, b, 1, WHITE);
+	}
+
+}
+
+void Level_SetNext(char* levelName, char* spawnId)
+{
+	//TODO: do this the same way as below.
+	strcpy(gGame.nextLevel, levelName);
 
 	if (!spawnId)return;
 
@@ -274,7 +451,7 @@ void Level_DebugRender(Level* level)
 		DrawBoundingBox(level->portals[i].box, BLUE);
 		DrawSphereWires(level->portals[i].position, 0.4, 4, 4, PURPLE);
 	}
-		
+
 	if (!level->spawnPointCount)return;
 	//TODO: Draw overlay of id as well
 	for (int i = 0; i < level->spawnPointCount; i++)

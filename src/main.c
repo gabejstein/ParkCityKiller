@@ -120,9 +120,9 @@ static void InitGame(void)
     memset(gGame.stateStack, 0, sizeof(gGame.stateStack));
     gGame.stateStackTop = 0;
     gGame.bDebugMode = 0;
-    gGame.curLevel = Level_GetLevel(LEVEL_OVERWORLD);
-    gGame.nextLevel = LEVEL_NULL;
-    gGame.nextSpawn[0] = '\0';
+    gGame.curLevel = NULL;
+    strcpy(gGame.nextLevel, "overworld");
+    strcpy(gGame.nextSpawn, "start");
     PlayerStats_Init();
     Player_Common_Init();
     NPC_CommonInit();
@@ -178,7 +178,7 @@ void ChangeGameState(GameState newState)
 
 static int CheckNextLevel(void)
 {
-    if (gGame.nextLevel < 0)
+    if (gGame.nextLevel[0] == '\0')
         return 0;
 
     gGame.fader.alpha += 0.05f;
@@ -187,14 +187,10 @@ static int CheckNextLevel(void)
     else
         gGame.fader.alpha = 1;
 
-    Level_Unload(gGame.curLevel);
-
-    gGame.curLevel = Level_GetLevel(gGame.nextLevel);
+    if (gGame.curLevel)
+        Level_Unload(gGame.curLevel);
 
     ChangeGameState(GetPlayState());
-
-    gGame.nextLevel = LEVEL_NULL;
-    gGame.nextSpawn[0] = '\0';
 
     return 1;
 }
