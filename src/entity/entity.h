@@ -24,7 +24,8 @@ typedef enum
 	ET_ENEMY,
 	ET_BULLET,
 	ET_PICKUP,
-	ET_PORTAL
+	ET_PORTAL,
+	ET_AI_VEHICLE
 }ENT_TAG;
 
 typedef enum
@@ -37,6 +38,12 @@ typedef enum
 
 typedef struct
 {
+	ModelHandle model;
+	float bounds; //radius for broadphase testing
+}MeshCollider;
+
+typedef struct
+{
 	Vector3 center;
 	Vector3 offset;
 	COLLIDER_TYPE type;
@@ -45,6 +52,7 @@ typedef struct
 	{
 		float radius;
 		BoundingBox box;
+		MeshCollider meshCollider;
 	};
 }CH_Collider;
 
@@ -54,6 +62,7 @@ typedef void(*EntityRender)(Entity*);
 struct Entity
 {
 	unsigned int id;
+	char* name;
 	int health;
 	int bActive;
 	int flags;

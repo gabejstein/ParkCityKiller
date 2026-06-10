@@ -48,7 +48,7 @@ void CH_LoadAnimationController(CH_AnimationController* controller, const char* 
         
         CH_AnimationClip* anim = &controller->anims[i];
         
-        anim->frameCount = controller->modelAnimations[i].frameCount;
+        anim->frameCount = controller->modelAnimations[i].keyframeCount;
         
         anim->name = controller->modelAnimations[i].name;
         anim->frameRate = 0.008f;
@@ -128,12 +128,15 @@ void CH_SetClipLoopName(CH_AnimationController* controller, const char* name, in
     }
 }
 
+//TODO: consider moving this to the resources module instead.
+//the model's skeleton is now part of the model.
 int CH_GetBoneId(const ModelHandle m, const char* name)
 {
     Model* model = RES_GetModel(m);
-    for (int i = 0; i < model->boneCount; i++)
+    ModelSkeleton skeleton = model->skeleton;
+    for (int i = 0; i < skeleton.boneCount; i++)
     {
-        if (strcmp(model->bones[i].name, name) == 0)
+        if (strcmp(skeleton.bones[i].name, name) == 0)
             return i;
     }
     return -1;
@@ -144,10 +147,10 @@ Transform CH_GetBoneTransform(const CH_AnimationController* controller, int bone
     ModelAnimation* anim = &controller->modelAnimations[controller->curAnim];
     unsigned int curFrame = controller->anims[controller->curAnim].curFrame;
 
-    if (curFrame >= anim->frameCount)
-        curFrame = anim->frameCount - 1;
+    if (curFrame >= anim->keyframeCount)
+        curFrame = anim->keyframeCount - 1;
 
-    Transform transform = anim->framePoses[curFrame][boneId];
+    Transform transform = anim->keyframePoses[curFrame][boneId];
 
     return transform;
 }

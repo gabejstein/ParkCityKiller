@@ -51,20 +51,17 @@ Entity* Entity_GetById(unsigned int id)
 	return &entities[id];
 }
 
-static RayCollision GetClosestLevelCollision(Vector3 position, Vector3 direction)
+static RayCollision GetClosestModelCollision(const Model* model,const Matrix matrix, Vector3 position, Vector3 direction)
 {
-	ModelHandle levelCollider = gGame.curLevel->collisionModel;
-	Model* level = RES_GetModel(levelCollider);
-
 	Ray ray;
 	ray.position = position;
 	ray.direction = direction;
 	RayCollision hit = { 0 };
 	hit.distance = INFINITY;
 
-	for (int i = 0; i < level->meshCount; i++)
+	for (int i = 0; i < model->meshCount; i++)
 	{
-		RayCollision newHit = GetRayCollisionMesh(ray, level->meshes[i], level->transform);
+		RayCollision newHit = GetRayCollisionMesh(ray, model->meshes[i], matrix);
 		if (newHit.hit && newHit.distance < hit.distance)
 		{
 			hit = newHit;
@@ -74,14 +71,15 @@ static RayCollision GetClosestLevelCollision(Vector3 position, Vector3 direction
 
 }
 
-static void HandleWorldCollisions_Sphere(Entity* e, float dt)
+static void HandleModelCollisions_Sphere(const Model* model,const Matrix matrix, Entity* e, float dt)
 {
+
 	if (e->velocity.y < 0)
 		e->bGrounded = 0;
 
 	e->collider.center = Vector3Add(e->transform.position, e->collider.offset);
 
-	RayCollision hit = GetClosestLevelCollision(e->collider.center, (Vector3) { 0, -1, 0 });
+	RayCollision hit = GetClosestModelCollision(model,matrix,e->collider.center, (Vector3) { 0, -1, 0 });
 
 	if (hit.hit)
 	{
@@ -125,7 +123,7 @@ static void HandleWorldCollisions_Sphere(Entity* e, float dt)
 	Vector3 direction = Vector3Normalize(e->velocity);
 	//direction.y = 0;
 
-	hit = GetClosestLevelCollision(e->collider.center, direction);
+	hit = GetClosestModelCollision(model, matrix, e->collider.center, direction);
 
 	if (hit.hit)
 	{
@@ -159,6 +157,9 @@ static void HandleWorldCollisions_Sphere(Entity* e, float dt)
 
 void UpdateEntities(float dt)
 {
+	ModelHandle levelCollider = gGame.curLevel->collisionModel;
+	Model* model = RES_GetModel(levelCollider);
+
 	for (int i = 0; i < curEntity; i++)
 	{
 		Entity* e = &entities[i];
@@ -193,9 +194,15 @@ void UpdateEntities(float dt)
 
 			e->acceleration = Vector3Zero();
 
+			if (e->transform.parent)
+			{
+				
+			}
+
+			//Colllisions against level
 			if (e->collider.type == CT_SPHERE)
 			{
-				HandleWorldCollisions_Sphere(e, dt);
+				HandleModelCollisions_Sphere(model,model->transform,e, dt);
 			}
 
 
@@ -233,6 +240,15 @@ void UpdateEntities(float dt)
 
 				}
 			}
+			else if (e1->collider.type == CT_SPHERE && e2->collider.type == CT_MESH)
+			{
+				if (CheckCollisionSpheres(e1->collider.center, e1->collider.radius, e2->transform.position, e2->collider.meshCollider.bounds))
+				{
+					Model* modelCollider = RES_GetModel(e2->collider.meshCollider.model);
+					Matrix worldMat = MatrixCompose(e2->transform.position, QuaternionFromEuler(e2->transform.rotation.x*DEG2RAD, e2->transform.rotation.y * DEG2RAD, e2->transform.rotation.z * DEG2RAD), Vector3One());
+					HandleModelCollisions_Sphere(modelCollider, worldMat, e1, dt);
+				}
+			}
 
 		}
 	}
@@ -266,6 +282,13 @@ void RenderEntities(void)
 		if (!e->bActive)
 			continue;
 
+		//Occlude far objects
+		if (Vector3DistanceSqr(e->transform.position, gGame.mainCamera.transform.position) > MAX_CAMERA_DIST_SQR) continue;
+
+		//currently doesn't work because the camera forward is only updated with the on-foot camera. Need to change that.
+		/*if (Vector3DotProduct(gGame.mainCamera.transform.forward, Vector3Subtract(gGame.mainCamera.transform.position,e->transform.position)) < 0)
+			continue;*/
+
 		if (e->render)
 			e->render(e);
 	}
@@ -286,9 +309,15 @@ void DebugRenderEntities(void)
 		Vector3 origin = e->transform.position;
 		DrawSphereWires(origin, 0.1f, 4, 4, BLUE);
 
-		if (e->collider.type == CT_SPHERE)
+		switch (e->collider.type)
 		{
+		case CT_SPHERE:
 			DrawSphereWires(e->collider.center, e->collider.radius, 4, 6, GREEN);
+			break;
+		case CT_MESH:
+			DrawSphereWires(e->transform.position, e->collider.meshCollider.bounds, 4, 6, GREEN);
+			RES_DrawModelWiresEx(e->model, e->transform.position, (Vector3) { 0, 1, 0 }, e->transform.rotation.y, Vector3One(), GREEN);
+			break;
 		}
 
 	}

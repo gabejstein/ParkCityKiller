@@ -423,6 +423,7 @@ void Level_Render(Level* level)
 	for (int i = 0; i < level->billboardCount; i++)
 	{
 		Billboard b = level->billboards[i];
+		if (Vector3DistanceSqr(b, gGame.mainCamera.transform.position) > MAX_CAMERA_DIST_SQR) continue;
 		//DrawBillboard(*gGame.mainCamera.camera, texture, b, 1, WHITE);
 	}
 

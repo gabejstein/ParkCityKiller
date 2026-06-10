@@ -87,7 +87,7 @@ for obj in spawnPointList:
     
 for obj in billboardList:
     file.write(struct.pack('I',obj["billboard"])) #billboard type
-    WriteVec3(file,obj.location)
+    WriteVec3(file,obj.matrix_world.translation) #gets world pos
 
 for obj in entitiesList:
     #save the actual type of object

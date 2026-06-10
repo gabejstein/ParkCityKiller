@@ -22,4 +22,6 @@ static const float MAX_HOR_VEL = 58.0f;
 
 #define UP (Vector3){0,1,0}
 
+static const float MAX_CAMERA_DIST_SQR = 100.0f * 100.0f;
+
 #endif

@@ -10,5 +10,6 @@
 float GetRandomFloat(float min, float max);
 int CheckPointInBox(const Vector3* point, const BoundingBox* box);
 void DrawTextOverlay(const char* text, const Vector3 worldPos, int fontSize, Color color);
+void SphereColliderFromModel(const Model* model, Vector3* c, float* dist);
 
 #endif

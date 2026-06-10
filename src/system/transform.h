@@ -3,7 +3,7 @@
 
 #include <raylib.h>
 
-typedef struct
+typedef struct CH_Transform
 {
     Vector3 position;
     Vector3 rotation;
@@ -11,6 +11,7 @@ typedef struct
     Vector3 right;
     Vector3 up;
     Vector3 scale;
+    struct CH_Transform* parent;
 }CH_Transform;
 
 #endif

@@ -47,3 +47,40 @@ void DrawTextOverlay(const char* text, const Vector3 worldPos, int fontSize, Col
 		DrawText(text, (int)pos.x, (int)pos.y, fontSize, color);
 }
 
+void SphereColliderFromModel(const Model* model, Vector3* c, float* dist)
+{
+	Vector3 center = Vector3Zero();
+	float distance = 0;
+	unsigned int totalVerts = 0;
+
+	for (int i = 0; i < model->meshCount; i++)
+	{
+		Mesh* mesh = &model->meshes[i];
+		Vector3* verts = (Vector3*) mesh->vertices;
+		totalVerts += mesh->vertexCount;
+		for (int j = 0; j < mesh->vertexCount; j++)
+		{
+			center = Vector3Add(center, verts[j]);
+		}
+	}
+
+	if(totalVerts!=0)
+		center = (Vector3){ center.x / totalVerts, center.y / totalVerts, center.z / totalVerts };
+
+	for (int i = 0; i < model->meshCount; i++)
+	{
+		Mesh* mesh = &model->meshes[i];
+		Vector3* verts = (Vector3*)mesh->vertices;
+		for (int j = 0; j < mesh->vertexCount; j++)
+		{
+			float curDistance = Vector3DistanceSqr(center, verts[j]);
+			if (curDistance > distance)
+				distance = curDistance;
+		}
+	}
+	distance = sqrtf(distance);
+
+	*c = center;
+	*dist = distance;
+}
+
