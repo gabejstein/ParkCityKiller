@@ -5,50 +5,64 @@
 #include <raymath.h>
 
 #ifndef MAX_FILENAME
-	#define MAX_FILENAME 256
+#define MAX_FILENAME 256
 #endif
 
 #define MAX_SOUNDS 256
 #define MAX_TEXTURES 256
 #define MAX_MODELS 256
 
-typedef struct
+typedef struct Resource_Sound
 {
 	char filePath[MAX_FILENAME];
 	Sound sound;
-	int nUsers; //probably won't use this, but it doesn't hurt to keep track of how many people are using things.
+	int nUsers;
+	struct Resource_Sound* next;
+	int index;
 }Resource_Sound;
 
-typedef struct
+typedef struct Resource_Texture
 {
 	char filePath[MAX_FILENAME];
 	Texture texture;
 	int nUsers;
+	struct Resource_Texture* next;
+	int index;
 }Resource_Texture;
 
-typedef struct
+typedef struct Resource_Model
 {
 	char filePath[MAX_FILENAME];
 	Model model;
 	int nUsers;
+	struct Resource_Model* next;
+	int index;
 }Resource_Model;
 
 typedef struct
 {
-	int curSound;
-	int curTexture;
-	int curModel;
 	Resource_Sound sounds[MAX_SOUNDS];
+	Resource_Sound* soundFreeList;
+	Resource_Sound* soundUsedList;
+
 	Resource_Texture textures[MAX_TEXTURES];
+	Resource_Texture* textureFreeList;
+	Resource_Texture* textureUsedList;
+
 	Resource_Model models[MAX_MODELS];
+	Resource_Model* modelFreeList;
+	Resource_Model* modelUsedList;
 }ResourceManager;
 
-ResourceManager gResourceManager;
+static ResourceManager gResourceManager;
 
 static Shader shader;
 static unsigned int cameraDirLoc;
 static unsigned int cameraPosLoc;
+static unsigned int fogDensityLoc;
+static unsigned int fogColorLoc;
 static unsigned int sunDirLoc;
+static unsigned int lightColorLoc;
 
 static void RES_LoadShader(void);
 static void UnloadSounds(void);
@@ -59,16 +73,55 @@ static void SetupModelMaterial(Model* m);
 
 void RES_Init(void)
 {
+	unsigned int i;
 	RES_LoadShader();
+
+	//Init model free-list
+	for (i = 0; i < MAX_MODELS - 1; i++)
+	{
+		gResourceManager.models[i].next = &gResourceManager.models[i + 1];
+		gResourceManager.models[i].index = i;
+	}
+	gResourceManager.models[i].next = NULL;
+	gResourceManager.models[i].index = i;
+
+	gResourceManager.modelFreeList = gResourceManager.models;
+	gResourceManager.modelUsedList = NULL;
+
+	//Init texture free-list
+	for (i = 0; i < MAX_TEXTURES - 1; i++)
+	{
+		gResourceManager.textures[i].next = &gResourceManager.textures[i + 1];
+		gResourceManager.textures[i].index = i;
+	}
+	gResourceManager.textures[i].next = NULL;
+	gResourceManager.textures[i].index = i;
+
+	gResourceManager.textureFreeList = gResourceManager.textures;
+	gResourceManager.textureUsedList = NULL;
+
+	//Init sounds free-list
+	for (i = 0; i < MAX_SOUNDS - 1; i++)
+	{
+		gResourceManager.sounds[i].next = &gResourceManager.sounds[i + 1];
+		gResourceManager.sounds[i].index = i;
+	}
+	gResourceManager.sounds[i].next = NULL;
+	gResourceManager.sounds[i].index = i;
+
+	gResourceManager.soundFreeList = gResourceManager.sounds;
+	gResourceManager.soundUsedList = NULL;
 }
 
+//Delete this. Just testing something with it
+Shader RES_GetShader(void) { return shader; }
 
 void RES_SetShaderValues(const Vector3 sunDir)
 {
 	SetShaderValue(shader, sunDirLoc, (float[3]) { sunDir.x, sunDir.y, sunDir.z }, SHADER_UNIFORM_VEC3);
 }
 
-void RES_UpdateShader(const Vector3* cameraPos, const Vector3 *cameraDir)
+void RES_UpdateShader(const Vector3* cameraPos, const Vector3* cameraDir)
 {
 	SetShaderValue(shader, cameraDirLoc, (float[3]) { cameraDir->x, cameraDir->y, cameraDir->z }, SHADER_UNIFORM_VEC3);
 	SetShaderValue(shader, cameraPosLoc, (float[3]) { cameraPos->x, cameraPos->y, cameraPos->z }, SHADER_UNIFORM_VEC3);
@@ -92,92 +145,140 @@ static void RES_LoadShader(void)
 	sunDirLoc = GetShaderLocation(shader, "sunDir");
 }
 
+
 SoundHandle RES_LoadSound(const char* fileName)
 {
 	if (fileName == NULL)
-		return -1;
+		return NULL_SOUND;
 
-	for (int i = 0; i < gResourceManager.curSound; i++)
+	for (Resource_Sound* cur = gResourceManager.soundUsedList; cur != NULL; cur = cur->next)
 	{
-		if (strcmp(fileName, gResourceManager.sounds[i].filePath) == 0)
+		if (strncmp(fileName, cur->filePath, MAX_FILENAME) == 0)
 		{
-			gResourceManager.sounds[i].nUsers++;
-			return i;
+			cur->nUsers++;
+			printf("RES: Sound Found in cache: %s\n", fileName);
+			return cur->index;
 		}
-			
 	}
 
-	if (gResourceManager.curSound >= MAX_SOUNDS)
-		return -1;
+	Resource_Sound* r = gResourceManager.soundFreeList;
+	if (r)
+	{
+		gResourceManager.soundFreeList = gResourceManager.soundFreeList->next;
+		r->next = gResourceManager.soundUsedList;
+		gResourceManager.soundUsedList = r;
 
-	int id = gResourceManager.curSound;
-	memset(&gResourceManager.sounds[id], 0, sizeof(Resource_Sound));
-	gResourceManager.sounds[id].sound = LoadSound(fileName);
+		r->sound = LoadSound(fileName);
+		strncpy(r->filePath, fileName, MAX_FILENAME);
+		r->filePath[MAX_FILENAME - 1] = '\0';
+		r->nUsers++;
+		return r->index;
+	}
+	else
+		printf("RES ERROR: Sound load unsuccessful: Out of sound resources.\n");
 
-	strncpy(gResourceManager.sounds[id].filePath , fileName, MAX_FILENAME);
-	gResourceManager.sounds[id].filePath[MAX_FILENAME - 1] = '\0';
-	
-	gResourceManager.curSound++;
-	return id;
-	
+	return NULL_SOUND;
 }
+
+inline bool RES_IsValidSoundHandle(const SoundHandle id) { return (id > 0 && id < MAX_SOUNDS && gResourceManager.sounds[id].nUsers); }
 
 void RES_PlaySound(const SoundHandle id)
 {
-	if (id < 0 || id >= gResourceManager.curSound)
+	if (RES_IsValidSoundHandle(id))
+		PlaySound(gResourceManager.sounds[id].sound);
+}
+
+//For unloading individual sounds at runtime.
+void RES_UnloadSound(const SoundHandle s)
+{
+	if (!RES_IsValidSoundHandle(s))
 	{
-		//TODO: throw in an error message as well.
+		printf("Error: Trying to unload with invalid sound handle.\n");
 		return;
 	}
 
-	PlaySound(gResourceManager.sounds[id].sound);
+	Resource_Sound* r = &gResourceManager.sounds[s];
+
+	Resource_Model* cur, * prev = NULL;
+	for (cur = gResourceManager.soundUsedList; cur != NULL; cur = cur->next)
+	{
+		if (cur->index == r->index)
+		{
+			if (prev)
+				prev->next = cur->next;
+			else
+				gResourceManager.soundUsedList = cur->next;
+
+			break;
+		}
+		prev = cur;
+	}
+
+	if (cur)
+	{
+		printf("RES: Unloading sound: %s\n", r->filePath);
+		UnloadSound(r->sound);
+		r->nUsers--;
+		r->filePath[0] = '\0';
+		r->next = gResourceManager.soundFreeList;
+		gResourceManager.soundFreeList = r;
+	}
+	else
+	{
+		printf("RES Error: Could not find sound in used list\n");
+	}
+
 }
 
 TextureHandle RES_LoadTexture(const char* fileName)
 {
 	if (fileName == NULL)
-		return NULL;
+		return NULL_TEXTURE;
 
-	for (int i = 0; i < gResourceManager.curTexture; i++)
+	for (Resource_Texture* cur = gResourceManager.textureUsedList; cur != NULL; cur = cur->next)
 	{
-		if (strcmp(fileName, gResourceManager.textures[i].filePath) == 0)
+		if (strncmp(fileName, cur->filePath, MAX_FILENAME) == 0)
 		{
-			gResourceManager.textures[i].nUsers++;
-			printf("Texture Found in cache: %s\n", fileName);
-			return &gResourceManager.textures[i].texture;
+			cur->nUsers++;
+			printf("RES: Texture Found in cache: %s\n", fileName);
+			return &cur->texture;
 		}
-
 	}
 
-	if (gResourceManager.curTexture >= MAX_TEXTURES)
-		return NULL;
+	Resource_Texture* rm = gResourceManager.textureFreeList;
+	if (rm)
+	{
+		gResourceManager.textureFreeList = gResourceManager.textureFreeList->next;
+		rm->next = gResourceManager.textureUsedList;
+		gResourceManager.textureUsedList = rm;
 
-	int id = gResourceManager.curTexture;
-	memset(&gResourceManager.textures[id], 0, sizeof(Resource_Texture));
-	gResourceManager.textures[id].texture = LoadTexture(fileName);
-	//TODO: might want to make this optional for other projects.
-	SetTextureFilter(gResourceManager.textures[id].texture, TEXTURE_FILTER_BILINEAR);
+		rm->texture = LoadTexture(fileName);
+		strncpy(rm->filePath, fileName, MAX_FILENAME);
+		rm->filePath[MAX_FILENAME - 1] = '\0';
+		SetTextureFilter(rm->texture, TEXTURE_FILTER_BILINEAR); //TODO: might want to make this optional for other projects.
+		rm->nUsers++;
+		return &rm->texture;
+	}
+	else
+		printf("RES Error: Texture load unsuccessful: Out of texture resources.\n");
 
-	strncpy(gResourceManager.textures[id].filePath, fileName, MAX_FILENAME);
-	gResourceManager.textures[id].filePath[MAX_FILENAME - 1] = '\0';
-
-	gResourceManager.curTexture++;
-	return &gResourceManager.textures[id].texture;
-	
+	return NULL_TEXTURE;
 }
+
+inline bool RES_IsValidTextureHandle(const TextureHandle t) { return (t != NULL_TEXTURE); }
+
+//TODO: cannot unload individual textures without the index being in the handler.
 
 void RES_DrawTexture(const TextureHandle handle, int x, int y)
 {
-	if (!handle)return;
-
-	DrawTexture(*handle,x,y,WHITE);
+	if (RES_IsValidTextureHandle(handle))
+		DrawTexture(*handle, x, y, WHITE);
 }
 
-void RES_DrawTexturePro(const TextureHandle handle,Rectangle src, Rectangle dest,Vector2 origin, float rot, Color color)
+void RES_DrawTexturePro(const TextureHandle handle, Rectangle src, Rectangle dest, Vector2 origin, float rot, Color color)
 {
-	if (!handle)return;
-
-	DrawTexturePro(*handle, src, dest, origin, rot, color);
+	if (RES_IsValidTextureHandle(handle))
+		DrawTexturePro(*handle, src, dest, origin, rot, color);
 }
 
 void RES_Unload(void)
@@ -189,124 +290,151 @@ void RES_Unload(void)
 
 static void UnloadSounds(void)
 {
-	for (int i = 0; i < gResourceManager.curSound; i++)
+	for (Resource_Sound* cur = gResourceManager.soundUsedList; cur != NULL; cur = cur->next)
 	{
-		printf("Unloading Sound: %s\n", gResourceManager.sounds[i].filePath);
-		UnloadSound(gResourceManager.sounds[i].sound);
-		gResourceManager.sounds[i].filePath[0] = '\0';
-		gResourceManager.textures[i].nUsers = 0;
+		printf("RES: Unloading Sound: %s\n", cur->filePath);
+		UnloadSound(cur->sound);
+		cur->nUsers = 0;
+		cur->filePath[0] = '\0';
 	}
-	gResourceManager.curSound = 0;
+	gResourceManager.soundUsedList = NULL;
+	//TODO: should also reset or add to freelist, but maybe wont assuming this is only called on program cleanup.
 }
 
 static void UnloadTextures(void)
 {
-	for (int i = 0; i < gResourceManager.curTexture; i++)
+	for (Resource_Texture* cur = gResourceManager.textureUsedList; cur != NULL; cur = cur->next)
 	{
-		printf("Unloading Texture: %s\n", gResourceManager.textures[i].filePath);
-		UnloadTexture(gResourceManager.textures[i].texture);
-		gResourceManager.textures[i].filePath[0] = '\0';
-		gResourceManager.textures[i].nUsers = 0;
+		printf("RES: Unloading Texture: %s\n", cur->filePath);
+		UnloadTexture(cur->texture);
+		cur->nUsers = 0;
+		cur->filePath[0] = '\0';
 	}
-	gResourceManager.curTexture = 0;
+	gResourceManager.textureUsedList = NULL;
+	//TODO: should also reset freelist, but maybe wont assuming this is only called on program cleanup.
 }
 
 ModelHandle RES_LoadModel(const char* fileName)
 {
 	if (fileName == NULL)
-		return -1;
+		return NULL_MODEL;
 
-	for (int i = 0; i < gResourceManager.curModel; i++)
+	for (Resource_Model* cur = gResourceManager.modelUsedList; cur != NULL; cur = cur->next)
 	{
-		if (strcmp(fileName, gResourceManager.models[i].filePath) == 0)
+		if (strncmp(fileName, cur->filePath, MAX_FILENAME) == 0)
 		{
-			gResourceManager.models[i].nUsers++;
+			cur->nUsers++;
 			printf("Model Found in cache: %s\n", fileName);
-			return i;
+			return cur->index;
 		}
 	}
 
-	if (gResourceManager.curModel >= MAX_MODELS)
-		return -1;
+	Resource_Model* rm = gResourceManager.modelFreeList;
+	if (rm)
+	{
+		gResourceManager.modelFreeList = gResourceManager.modelFreeList->next;
+		rm->next = gResourceManager.modelUsedList;
+		gResourceManager.modelUsedList = rm;
 
-	int id = gResourceManager.curModel;
-	memset(&gResourceManager.models[id], 0, sizeof(Resource_Model));
-	gResourceManager.models[id].model = LoadModel(fileName);
-	
-	SetupModelMaterial(&gResourceManager.models[id].model);
+		rm->model = LoadModel(fileName);
+		strncpy(rm->filePath, fileName, MAX_FILENAME);
+		rm->filePath[MAX_FILENAME - 1] = '\0';
+		SetupModelMaterial(&rm->model);
+		rm->nUsers++;
+		return rm->index;
+	}
+	else
+		printf("Model load unsuccessful: Out of model resources.\n");
 
-	strncpy(gResourceManager.models[id].filePath, fileName, MAX_FILENAME);
-	gResourceManager.models[id].filePath[MAX_FILENAME - 1] = '\0';
+	return NULL_MODEL;
+}
 
-	gResourceManager.curModel++;
-	return id;
+inline bool RES_IsValidModelHandle(const ModelHandle m) { return (m >= 0 && m < MAX_MODELS && gResourceManager.models[m].nUsers); }
+
+//For unloading individual models at runtime.
+void RES_UnloadModel(const ModelHandle m)
+{
+	if (!RES_IsValidModelHandle(m))
+	{
+		printf("Error: Trying to unload with invalid model handle.\n");
+		return;
+	}
+
+	Resource_Model* rm = &gResourceManager.models[m];
+
+	Resource_Model* cur, * prev = NULL;
+	for (cur = gResourceManager.modelUsedList; cur != NULL; cur = cur->next)
+	{
+		if (cur->index == rm->index)
+		{
+			if (prev)
+				prev->next = cur->next;
+			else
+				gResourceManager.modelUsedList = cur->next;
+
+			break;
+		}
+		prev = cur;
+	}
+
+	if (cur)
+	{
+		printf("RES: Unloading model: %s\n", rm->filePath);
+		UnloadModel(rm->model);
+		rm->nUsers--;
+		rm->filePath[0] = '\0';
+		rm->next = gResourceManager.modelFreeList;
+		gResourceManager.modelFreeList = rm;
+	}
+	else
+	{
+		printf("Error: Could not find model in used list\n");
+	}
+
 }
 
 static void UnloadModels(void)
 {
-	for (int i = 0; i < gResourceManager.curModel; i++)
+	for (Resource_Model* cur = gResourceManager.modelUsedList; cur != NULL; cur = cur->next)
 	{
-		printf("Unloading Model: %s\n", gResourceManager.models[i].filePath);
-		UnloadModel(gResourceManager.models[i].model);
-		gResourceManager.models[i].filePath[0] = '\0';
-		gResourceManager.models[i].nUsers = 0;
+		UnloadModel(cur->model);
+		cur->nUsers = 0;
+		cur->filePath[0] = '\0';
 	}
-	gResourceManager.curModel = 0;
-}
-
-void RES_DrawModel(const ModelHandle m, Vector3 pos, float scale)
-{
-	if (m < 0 || m >= gResourceManager.curModel)
-	{
-		//TODO: throw in an error message as well.
-		return;
-	}
-
-	DrawModel(gResourceManager.models[m].model, pos, scale, WHITE);
-
-}
-
-void RES_DrawModelEx(const ModelHandle m, Vector3 pos, Vector3 rotAxis,float angle, Vector3 scale)
-{
-	if (m < 0 || m >= gResourceManager.curModel)
-	{
-		//TODO: throw in an error message as well.
-		return;
-	}
-
-	DrawModelEx(gResourceManager.models[m].model, pos, rotAxis,angle, scale, WHITE);
-}
-
-void RES_DrawModelWiresEx(const ModelHandle m, Vector3 pos, Vector3 rotAxis, float angle, Vector3 scale,Color color)
-{
-	if (m < 0 || m >= gResourceManager.curModel)
-	{
-		//TODO: throw in an error message as well.
-		return;
-	}
-
-	DrawModelWiresEx(gResourceManager.models[m].model, pos, rotAxis, angle, scale, color);
-}
-
-void RES_UpdateModelAnimation(const ModelHandle m, ModelAnimation anim, int frame)
-{
-	if (m < 0 || m >= gResourceManager.curModel)
-	{
-		//TODO: throw in an error message as well.
-		return;
-	}
-	UpdateModelAnimation(gResourceManager.models[m].model, anim, frame);
+	gResourceManager.modelUsedList = NULL;
+	//TODO: should also reset freelist, but maybe wont assuming this is only called on program cleanup.
 }
 
 Model* RES_GetModel(const ModelHandle m)
 {
-	if (m < 0 || m >= gResourceManager.curModel)
-	{
-		//TODO: throw in an error message as well.
-		return NULL;
-	}
+	if (!RES_IsValidModelHandle(m))
+		return NULL; //TODO: throw in an error message as well.
 
 	return &gResourceManager.models[m].model;
+}
+
+void RES_DrawModel(const ModelHandle m, Vector3 pos, float scale)
+{
+	if (RES_IsValidModelHandle(m))
+		DrawModel(gResourceManager.models[m].model, pos, scale, WHITE);
+}
+
+void RES_DrawModelEx(const ModelHandle m, Vector3 pos, Vector3 rotAxis, float angle, Vector3 scale)
+{
+	if (RES_IsValidModelHandle(m))
+		DrawModelEx(gResourceManager.models[m].model, pos, rotAxis, angle, scale, WHITE);
+}
+
+void RES_DrawModelWiresEx(const ModelHandle m, Vector3 pos, Vector3 rotAxis, float angle, Vector3 scale, Color color)
+{
+	if (RES_IsValidModelHandle(m))
+		DrawModelWiresEx(gResourceManager.models[m].model, pos, rotAxis, angle, scale, color);
+}
+
+void RES_UpdateModelAnimation(const ModelHandle m, ModelAnimation anim, int frame)
+{
+	if (RES_IsValidModelHandle(m))
+		UpdateModelAnimation(gResourceManager.models[m].model, anim, frame);
 }
 
 Vector3 RES_GetModelCenter(const ModelHandle m)
@@ -337,3 +465,4 @@ Vector3 RES_GetModelCenter(const ModelHandle m)
 
 	return center;
 }
+
