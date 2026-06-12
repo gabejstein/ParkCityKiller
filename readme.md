@@ -8,16 +8,16 @@ I forked this into a separate project which I probably won't release to the publ
 
 ## Features
 
--Full 3D orbit camera and third-person player controller with the analogue stick
--A Blender script that allows some level authoring capability.
--A flexible resource management system.
--A custom collision and physics system that's meant to allow simple 3D collisions. It still needs some improvement.
--A dialogue box with a byte code interpreter.
--A simple scripted cutscene system (WIP)
+- Full 3D orbit camera and third-person player controller with the analogue stick
+- A Blender script that allows some level authoring capability.
+- A flexible resource management system.
+- A custom collision and physics system that's meant to allow simple 3D collisions. It still needs some improvement.
+- A dialogue box with a byte code interpreter.
+- A simple scripted cutscene system (WIP)
 
 ## Media
 
-![Showing off the character controller, camera, and physics]
+![Showing off the character controller, camera, and physics.]
 (screenshots/platforming.gif)
 
 ##Disclaimer
