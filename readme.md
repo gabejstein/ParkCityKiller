@@ -18,7 +18,7 @@ I forked this into a separate project which I probably won't release to the publ
 ## Media
 
 ![Showing off the character controller, camera, and physics.]
-(screenshots/platforming.png)
+(./screenshots/platforming.png)
 
 ##Disclaimer
 
