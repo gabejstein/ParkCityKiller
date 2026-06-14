@@ -6,6 +6,10 @@ In the end, I kind of settled for something in between that and a more modern ty
 
 I forked this into a separate project which I probably won't release to the public, but I'll still update this one when I feel something's worth improving.
 
+## Media
+
+![Showing off the character controller, camera, and physics.](./screenshots/platforming.gif)
+
 ## Features
 
 - Full 3D orbit camera and third-person player controller with the analogue stick
@@ -13,13 +17,12 @@ I forked this into a separate project which I probably won't release to the publ
 - A flexible resource management system.
 - A custom collision and physics system that's meant to allow simple 3D collisions. It still needs some improvement.
 - A dialogue box with a byte code interpreter.
-- A simple scripted cutscene system (WIP)
+- A particle system.
+- A simple scripted cutscene system (WIP).
+- Debugging tools.
 
-## Media
 
-![Showing off the character controller, camera, and physics.](./screenshots/platforming.gif)
-
-##Disclaimer
+## Disclaimer
 
 Note that this project is a work-in-progress and is not production-ready code. It is not mean't for commercial projects. I will not be held responsible for any damages that result from using my software.
 
