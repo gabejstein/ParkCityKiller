@@ -90,6 +90,9 @@
     <ClInclude Include="src\entity\interactable.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\system\debug.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.c">
@@ -159,6 +162,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\entity\entity.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\system\debug.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

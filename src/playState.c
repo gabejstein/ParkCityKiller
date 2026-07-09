@@ -19,6 +19,7 @@
 #include "gui/msgBox.h"
 #include "gui/dialogueBox.h"
 #include "pauseMenuState.h"
+#include "system/debug.h"
 
 #include "const.h"
 
@@ -171,6 +172,12 @@ static void PlayState_Update(float dt)
 #if DEBUG_TOOLS
 	if (IsKeyPressed(KEY_X))
 		gGame.bDebugMode = !gGame.bDebugMode;
+
+	if (IsKeyPressed(KEY_P))
+		Debug_PingConsole("Console Test!");
+
+	Debug_PrintOverlay("FPS: %d", GetFrameTime());
+	Debug_PrintOverlay("Player Pos: %f %f %f", player->transform.position.x, player->transform.position.y, player->transform.position.z);
 #endif
 
 	if (IsKeyPressed(KEY_C))

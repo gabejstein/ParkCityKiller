@@ -13,6 +13,7 @@
 #include "gui/dialogueBox.h"
 #include "entity/player.h"
 #include "entity/npc.h"
+#include "system/debug.h"
 
 static void InitRayLib(void);
 static void Unload(void);
@@ -70,6 +71,17 @@ int main(int argc, char** argv)
 
             if (gGame.fader.alpha > 0)
                 DrawRectangle(0, 0, VIRTUAL_WINDOW_W, VIRTUAL_WINDOW_H, Fade(gGame.fader.color, gGame.fader.alpha));
+
+            #if DEBUG_TOOLS
+                if (gGame.bDebugMode)
+                {
+                    Debug_RenderOverlays();
+                    Debug_RenderConsole();
+                }
+
+                Debug_UpdateConsole(deltaTime);
+                Debug_ResetOverlays(); //this needs to be done regardless of whether or not it's being used.
+            #endif
         EndTextureMode();
 
         

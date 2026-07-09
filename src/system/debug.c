@@ -5,11 +5,11 @@
 #include <string.h>
 
 #define MAX_OVERLAY 12
-#define MAX_CONSOLE 12
+#define MAX_CONSOLE 24
 #define BUFFER_SIZE 256
 
 //Overlays
-static int overlayX=400, overlayY=10;
+static int overlayX=100, overlayY=10;
 static int margins = 18;
 static unsigned int overlayCount = 0;
 static char overlays[MAX_OVERLAY][BUFFER_SIZE];
@@ -53,33 +53,33 @@ void Debug_ResetOverlays(void)
 
 void Debug_PingConsole(const char* txt, ...)
 {
-	if (queueHead < MAX_CONSOLE)
-	{
-		va_list args;
-		va_start(args, txt);
-		vsnprintf(consoleQueue[queueHead], BUFFER_SIZE, txt, args);
-		va_end(args);
+	if ((queueTail+1)%MAX_CONSOLE==queueHead)return;
 
-		queueHead++;
-	}
+	va_list args;
+	va_start(args, txt);
+	vsnprintf(consoleQueue[queueTail], BUFFER_SIZE, txt, args);
+	va_end(args);
+
+	queueTail = (queueTail+1)%MAX_CONSOLE;
 
 }
 
 void Debug_UpdateConsole(float dt)
 {
+	if (queueHead == queueTail) return;
+
 	queueTimer += dt;
 	if (queueTimer >= 2)
 	{
 		queueTimer = 0;
-		if (++queueTail >= queueHead)
-			queueTail = queueHead = 0;
+		queueHead =  (queueHead + 1) % MAX_CONSOLE;
 	}
 }
 
 void Debug_RenderConsole(void)
 {
 	int y = consoleY;
-	for (int i = queueTail; i <= queueHead; i++)
+	for (int i = queueHead; i !=queueTail; i=(i+1)%MAX_CONSOLE)
 	{
 		DrawText(consoleQueue[i], consoleX, y, 16, GREEN);
 		y += margins;

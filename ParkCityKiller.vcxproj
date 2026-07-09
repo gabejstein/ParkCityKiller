@@ -152,6 +152,7 @@
     <ClInclude Include="src\entity\player.h" />
     <ClInclude Include="src\playState.h" />
     <ClInclude Include="src\script\script.h" />
+    <ClInclude Include="src\system\debug.h" />
     <ClInclude Include="src\system\skybox.h" />
     <ClInclude Include="src\spawnZone.h" />
     <ClInclude Include="src\system\animation.h" />
@@ -167,6 +168,7 @@
     <ClCompile Include="src\entity\npc.c" />
     <ClCompile Include="src\gui\dialogueBox.c" />
     <ClCompile Include="src\script\script.c" />
+    <ClCompile Include="src\system\debug.c" />
     <ClCompile Include="src\system\skybox.c" />
     <ClCompile Include="src\pauseMenuState.c" />
     <ClCompile Include="src\gui\selectionList.c" />
