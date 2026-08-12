@@ -3,15 +3,6 @@
 
 #include "entity.h"
 
-typedef enum
-{
-	PLAYER_STATE_MOVE,
-	PLAYER_STATE_AIM,
-	PLAYER_STATE_HURT,
-	PLAYER_STATE_DEAD
-}PLAYER_STATE;
-
-PLAYER_STATE GetPlayerState(void);
 Entity* Player_GetInteractable(void);
 
 void Player_Common_Init(void);

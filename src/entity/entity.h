@@ -5,6 +5,9 @@
 #include "../system/transform.h"
 #include "../system/resource.h"
 #include "../system/utils.h"
+#include <stdio.h>
+
+#define MAX_ENTITY_NAME 256
 
 typedef struct Entity Entity;
 
@@ -56,13 +59,24 @@ typedef struct
 	};
 }CH_Collider;
 
+typedef struct Entity Entity;
+
+typedef struct ContactInfo
+{
+	Vector3 point, normal;
+	Entity* other;
+	float distance, penetrationDepth;
+	struct ContactInfo* next;
+}ContactInfo;
+
 typedef void(*EntityUpdate)(Entity*, float);
 typedef void(*EntityRender)(Entity*);
+typedef void(*EntityCollision)(Entity*, ContactInfo*);
 
 struct Entity
 {
 	unsigned int id;
-	char* name;
+	char name[MAX_ENTITY_NAME];
 	int health;
 	int bActive;
 	int flags;
@@ -76,7 +90,7 @@ struct Entity
 	EntityUpdate update;
 	EntityRender render;
 	EntityRender debugRender;
-	void (*onCollision)(Entity* self, Entity* other);
+	EntityCollision onCollision;
 	void (*onWorldCollision)(Entity* self, RayCollision groundHit);
 	void (*unload)(Entity* self);
 	ENT_TAG tag;
@@ -84,10 +98,13 @@ struct Entity
 	ModelHandle model;
 };
 
+
 void Entity_Init(void);
 void Entity_Unload(void);
 Entity* NewEntity(void);
+Entity* LoadEntity(FILE* f);
 Entity* Entity_GetById(unsigned int id);
+Entity* Entity_GetByName(const char* name);
 void UpdateEntities(float dt);
 void RenderEntities(void);
 void DebugRenderEntities(void);

@@ -2,6 +2,7 @@
 #include <raymath.h>
 #include "..\const.h"
 #include "..\game.h"
+#include <string.h>
 
 //entities
 #define MAX_ENTITY 1000
@@ -10,10 +11,39 @@ static unsigned int curEntity = 0;
 
 static void ResolveSphereCollision(Entity* e1, Entity* e2);
 
+#define MAX_CONTACTS 1000
+static ContactInfo contacts[MAX_CONTACTS];
+static ContactInfo* contactList = NULL;
+
+void InitContacts(void)
+{
+	memset(contacts, 0, sizeof(ContactInfo)*MAX_CONTACTS);
+	unsigned int i;
+	for (i = 0; i < MAX_CONTACTS - 1; i++)
+		contacts[i].next = &contacts[i + 1];
+	contacts[i].next = NULL;
+	contactList = contacts;
+}
+
+ContactInfo* NewContact(void)
+{
+	ContactInfo* c = contactList;
+	contactList = contactList->next;
+	return c;
+}
+
+void FreeContact(ContactInfo* c)
+{
+	c->next = contactList;
+	contactList = c;
+}
+
 void Entity_Init(void)
 {
 	curEntity = 0;
 	memset(entities, 0, sizeof(entities));
+
+	InitContacts();
 }
 
 void Entity_Unload(void)
@@ -44,11 +74,50 @@ Entity* NewEntity(void)
 	return e;
 }
 
+Entity* LoadEntity(FILE* f)
+{
+	char nameBuffer[128];
+	uint32_t nameBufferCount;
+	Entity* e = NewEntity();
+
+	fread(&e->transform.position, sizeof(Vector3), 1, f);
+	printf("Position: %f %f %f\n", e->transform.position.x, e->transform.position.y, e->transform.position.z);
+
+	fread(&e->transform.rotation, sizeof(Vector3), 1, f);
+
+	e->transform.rotation = Vector3Scale(e->transform.rotation, RAD2DEG);
+	printf("Rotation: %f %f %f\n", e->transform.rotation.x, e->transform.rotation.y, e->transform.rotation.z);
+
+	fread(&e->bActive, 1, 1, f);
+
+	printf("IsActive: %s\n", e->bActive ? "true" : "false");
+
+	fread(&nameBufferCount, 4, 1, f);
+	if (nameBufferCount)
+	{
+		fread(nameBuffer, 1, nameBufferCount, f);
+		strncpy(e->name, nameBuffer, nameBufferCount);
+
+		printf("Entity Name: %s\n", e->name);
+	}
+
+	return e;
+}
+
 Entity* Entity_GetById(unsigned int id)
 {
 	if (id < 0 || id >= curEntity)return NULL;
 
 	return &entities[id];
+}
+
+Entity* Entity_GetByName(const char* name)
+{
+	for (int i = 0; i < curEntity; i++)
+		if (strcmp(name, entities[i].name) == 0)
+			return &entities[i];
+
+	return NULL;
 }
 
 static RayCollision GetClosestModelCollision(const Model* model,const Matrix matrix, Vector3 position, Vector3 direction)
@@ -87,9 +156,6 @@ static void HandleModelCollisions_Sphere(const Model* model,const Matrix matrix,
 		if (hit.distance <= e->collider.radius)
 		{
 
-			if (e->onWorldCollision)
-				e->onWorldCollision(e, hit);
-
 			if (notSlope)
 			{
 				e->bGrounded = 1;
@@ -102,6 +168,9 @@ static void HandleModelCollisions_Sphere(const Model* model,const Matrix matrix,
 				e->collider.center.x -= hit.normal.x * (hit.distance - e->collider.radius);
 				e->collider.center.z -= hit.normal.z * (hit.distance - e->collider.radius);
 			}
+
+			if (e->onWorldCollision)
+				e->onWorldCollision(e, hit);
 
 
 		}
@@ -171,6 +240,7 @@ void UpdateEntities(float dt)
 			sinf(e->transform.rotation.y * DEG2RAD) * cosf(e->transform.rotation.x * DEG2RAD),
 			-sinf(e->transform.rotation.x * DEG2RAD),
 			cosf(e->transform.rotation.y * DEG2RAD) * cosf(e->transform.rotation.x * DEG2RAD) };
+		//e->transform.forward = Vector3Normalize(e->transform.forward);
 
 		e->transform.right = Vector3CrossProduct((Vector3) { 0, 1, 0 }, e->transform.forward);
 		e->transform.up = Vector3CrossProduct(e->transform.forward, e->transform.right);
@@ -224,11 +294,19 @@ void UpdateEntities(float dt)
 			{
 				if (CheckCollisionSpheres(e1->collider.center, e1->collider.radius, e2->collider.center, e2->collider.radius))
 				{
+					ContactInfo* a = NewContact(); //TODO: need a way to return these to the free list.
+					ContactInfo* b = NewContact();
+					*a =(ContactInfo) {
+						.other = e2
+					};
+					*b = (ContactInfo){
+						.other = e1
+					};
 					if (e1->onCollision)
-						e1->onCollision(e1, e2);
+						e1->onCollision(e1, a);
 
 					if (e2->onCollision)
-						e2->onCollision(e2, e1);
+						e2->onCollision(e2, b);
 
 					if (!HAS_FLAG(e1->flags, ET_FLAG_PASSTHROUGH) && !HAS_FLAG(e2->flags, ET_FLAG_PASSTHROUGH))
 					{
@@ -237,6 +315,9 @@ void UpdateEntities(float dt)
 						else
 							ResolveSphereCollision(e2, e1);
 					}
+
+					FreeContact(a);
+					FreeContact(b);
 
 				}
 			}

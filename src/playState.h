@@ -6,7 +6,6 @@
 
 GameState GetPlayState(void);
 
-
 Entity* GetPlayer(void);
 
 #endif

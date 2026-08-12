@@ -4,7 +4,7 @@
 #include <raylib.h>
 #include "level.h"
 #include "gameWorld.h"
-#include "system/transform.h"
+#include "camera.h"
 
 typedef struct
 {
@@ -38,16 +38,6 @@ void ChangeGameState(GameState newState);
 
 typedef struct
 {
-    Camera* camera;
-    CH_Transform transform;
-    Vector3 followDistance;
-    Vector3 targetRot;
-    Vector3 targetPos;
-    float time;
-}GameCamera;
-
-typedef struct
-{
     int bFullscreen;
 }Settings;
 
@@ -63,6 +53,7 @@ typedef struct
     Settings settings;
     int bDebugMode;
     int bRunning;
+    int bInCutscene;
     PlayerStats playerStats;
     Level* curLevel;
     char nextLevel[256];

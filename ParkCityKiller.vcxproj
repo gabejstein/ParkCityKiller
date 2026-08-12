@@ -135,6 +135,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="src\camera.h" />
+    <ClInclude Include="src\effect.h" />
     <ClInclude Include="src\entity\bullet.h" />
     <ClInclude Include="src\entity\enemy.h" />
     <ClInclude Include="src\const.h" />
@@ -163,6 +165,8 @@
     <ClInclude Include="src\titleState.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\camera.c" />
+    <ClCompile Include="src\effect.c" />
     <ClCompile Include="src\entity\entity.c" />
     <ClCompile Include="src\entity\interactable.c" />
     <ClCompile Include="src\entity\npc.c" />
