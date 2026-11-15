@@ -1,11 +1,12 @@
 #include "selectionList.h"
-#include <raylib.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #define MAX(a, b) ((a)>(b)? (a) : (b))
 #define MIN(a, b) ((a)<(b)? (a) : (b))
+
+#define MAX_OPTION_LENGTH 256
 
 //TODO: Need to abstract this stuff out into an input manager, so the whole game can use it.
 static float lastAxisDown = 0.0f;
@@ -15,6 +16,8 @@ static float lastAxisRight = 0.0f;
 
 static const float deadZone = 0.3f;
 static const float threshold = 0.6f;
+
+static void DefaultRenderItem(SelectionList* list, int i);
 
 static int IsGamepadStickUp(int gamepad)
 {
@@ -64,55 +67,49 @@ static int IsGamepadStickRight(int gamepad)
 	return isPressed;
 }
 
-SelectionList* NewSelectionList(int nOptions, void(*onSelect), void(*renderItem))
+SelectionList* SelectionList_NewEx(int optionsCount, char** labels, int columns, int rows, void(*onSelect), void(*renderItem),Font font)
 {
-	SelectionList* list = (SelectionList*) malloc(sizeof(SelectionList));
+	SelectionList* list = (SelectionList*)malloc(sizeof(SelectionList));
 	if (!list)
 	{
 		printf("Could not allocate memory for selection list.\n");
 		return NULL;
 	}
-	
 	memset(list, 0, sizeof(SelectionList));
 
-	list->nColumns = 1; //just having one column for now.
-	list->nRows = nOptions;
-	list->nOptions = nOptions;
+	list->optionsCount = optionsCount;
+	list->nColumns = columns; 
+	list->nRows = optionsCount;
 	list->OnSelect = onSelect;
 	list->RenderItem = renderItem;
 	list->bShowCursor = 1;
 	list->colPadding = 64;
 	list->rowPadding = 16;
-	list->maxDisplayRows = nOptions;
+	list->maxDisplayRows = optionsCount;
+	list->font = font;
+	list->data = NULL;
 
-	/*list->options = (char*) malloc(sizeof(char) * MAX_OPTION_LENGTH * nOptions);
-	
-	if (!list->options)
+	list->optionLabels = (char**)malloc(sizeof(char*) * optionsCount);
+	if (!list->optionLabels)
 	{
-		printf("Could not create selection list options\n");
+		printf("Could not allocate option labels.\n");
 		return NULL;
 	}
 
-	memset(list->options, 0, sizeof(char) * MAX_OPTION_LENGTH * nOptions);
-
-	for (int i = 0; i < nOptions; i++)
+	for (int i = 0; i < optionsCount; i++)
 	{
-		strncpy(list->options[i], options[i], MAX_OPTION_LENGTH);
-	}*/
+		list->optionLabels[i] = (char*) malloc(sizeof(char) * MAX_OPTION_LENGTH);
+		strncpy(list->optionLabels[i], labels[i], MAX_OPTION_LENGTH);
+		//list->optionLabels[i][strlen(labels[i]) + 1] = '\0';
+		printf("Option %d: %s\n", i, list->optionLabels[i]);
+	}
 
-	int n = 0;
-	list->options[n++] = "Fire 1";
-	list->options[n++] = "Firaga";
-	list->options[n++] = "Thunder";
-	list->options[n++] = "Thunder 2";
-	list->options[n++] = "Cure 1";
-	list->options[n++] = "Run Away";
-	list->options[n++] = "Yo mama";
-	list->options[n++] = "Cheese soup";
-	list->options[n++] = "Cure 2";
-	list->options[n++] = "Curaga";
-	list->options[n++] = "Tornado";
-	
+	return list;
+}
+
+SelectionList* SelectionList_New(int optionsCount, char** labels, void(*onSelect))
+{
+	SelectionList* list = SelectionList_NewEx(optionsCount,labels, 2, optionsCount, onSelect, DefaultRenderItem,GetFontDefault());
 	return list;
 }
 
@@ -132,12 +129,12 @@ static void OnSelect(SelectionList* list)
 {
 	int index = list->curY * list->nColumns + list->curX;
 	if (list->OnSelect)
-		list->OnSelect(index); //TODO: Need to calculate 1d selection from 2d
+		list->OnSelect(index,list->data); //TODO: Need to calculate 1d selection from 2d
 
 	printf("Selected: %d\n", index);
 }
 
-void UpdateSelectionList(SelectionList* list, float dt)
+void SelectionList_Update(SelectionList* list, float dt)
 {
 	//TODO: Really need to abstract things out into an input manager.
 	int gamepad = 0;
@@ -179,7 +176,12 @@ void UpdateSelectionList(SelectionList* list, float dt)
 	}
 }
 
-void RenderSelectionList(SelectionList* list)
+static void DefaultRenderItem(SelectionList* list, int i)
+{
+
+}
+
+void SelectionList_Render(SelectionList* list)
 {
 	unsigned int x = list->x, y = list->y;
 
@@ -197,8 +199,8 @@ void RenderSelectionList(SelectionList* list)
 				DrawRectangle(x - 14, y, 8, 8, YELLOW);
 			}
 
-			if (index < list->nOptions)
-				DrawText(list->options[index], x, y, 14, WHITE);
+			if (index < list->optionsCount)
+				DrawText(list->optionLabels[index], x, y, 14, WHITE);
 			else
 				DrawText("---", x, y, 14, WHITE);
 			
@@ -215,10 +217,20 @@ void RenderSelectionList(SelectionList* list)
 	//DrawTriangle()
 }
 
-void UnloadSelectionList(SelectionList* list)
+void SelectionList_Unload(SelectionList* list)
 {
 	if (!list)return;
 
+	for (int i = 0; i < list->optionsCount; i++)
+		free(list->optionLabels[i]);
+
+	free(list->optionLabels);
+
 	free(list);
 	list = NULL;
+}
+
+void SelectionList_ChangeText(const int index, const char* text)
+{
+
 }
